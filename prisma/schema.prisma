@@ -1,0 +1,232 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ChessLevel {
+  NO_RULES
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum Locale {
+  fr
+  de
+  en
+}
+
+enum GameResult {
+  WHITE_WIN
+  BLACK_WIN
+  DRAW
+  ONGOING
+}
+
+model User {
+  id             String            @id @default(cuid())
+  email          String            @unique
+  passwordHash   String
+  emailVerified  DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  profile        Profile?
+  lessonProgress LessonProgress[]
+  attempts       ExerciseAttempt[]
+  games          Game[]
+  badges         UserBadge[]
+  goals          DailyGoal[]
+  statistics     UserStatistics?
+  weaknesses     UserWeakness[]
+  notifications  Notification[]
+}
+
+model Profile {
+  id               String     @id @default(cuid())
+  userId           String     @unique
+  displayName      String
+  avatarUrl        String?
+  locale           Locale     @default(fr)
+  chessLevel       ChessLevel @default(NO_RULES)
+  preferredSide    String     @default("white")
+  coachMode        String     @default("guided")
+  theme            String     @default("light")
+  totalLearningMin Int        @default(0)
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  level       Int
+  title       Json
+  description Json
+  modules     Module[]
+}
+
+model Module {
+  id       String   @id @default(cuid())
+  courseId String
+  order    Int
+  title    Json
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons  Lesson[]
+}
+
+model Lesson {
+  id          String           @id @default(cuid())
+  moduleId    String
+  slug        String           @unique
+  order       Int
+  title       Json
+  objective   Json
+  content     Json
+  xpReward    Int
+  module      Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress    LessonProgress[]
+}
+
+model LessonProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  lessonId    String
+  completed   Boolean  @default(false)
+  lastStep    Int      @default(0)
+  attempts    Int      @default(0)
+  completedAt DateTime?
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  @@unique([userId, lessonId])
+}
+
+model Exercise {
+  id          String            @id @default(cuid())
+  slug        String            @unique
+  theme       String
+  difficulty  Int
+  fen         String
+  sideToMove  String
+  solution    Json
+  explanation Json
+  attempts    ExerciseAttempt[]
+}
+
+model ExerciseAttempt {
+  id          String   @id @default(cuid())
+  userId      String
+  exerciseId  String
+  correct     Boolean
+  moves       Json
+  seconds     Int
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+}
+
+model Game {
+  id            String        @id @default(cuid())
+  userId        String
+  pgn           String
+  result        GameResult    @default(ONGOING)
+  color         String
+  difficulty    String
+  trainingMode  Boolean      @default(false)
+  startedAt     DateTime     @default(now())
+  endedAt       DateTime?
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  moves         GameMove[]
+  analysis      GameAnalysis?
+}
+
+model GameMove {
+  id        String @id @default(cuid())
+  gameId    String
+  ply       Int
+  san       String
+  fen       String
+  evalCp    Int?
+  game      Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+}
+
+model GameAnalysis {
+  id          String   @id @default(cuid())
+  gameId      String   @unique
+  summary     Json
+  accuracy    Int
+  mistakes    Int
+  blunders    Int
+  keyMoments  Json
+  createdAt   DateTime @default(now())
+  game        Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+}
+
+model Badge {
+  id          String      @id @default(cuid())
+  code        String      @unique
+  title       Json
+  description Json
+  xp          Int
+  users       UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  badgeId   String
+  earnedAt  DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  @@unique([userId, badgeId])
+}
+
+model DailyGoal {
+  id          String   @id @default(cuid())
+  userId      String
+  date        DateTime
+  targetXp    Int      @default(40)
+  completedXp Int      @default(0)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, date])
+}
+
+model UserStatistics {
+  id                 String @id @default(cuid())
+  userId             String @unique
+  xp                 Int    @default(0)
+  streak             Int    @default(0)
+  lessonsCompleted   Int    @default(0)
+  exercisesSolved    Int    @default(0)
+  gamesPlayed        Int    @default(0)
+  wins               Int    @default(0)
+  losses             Int    @default(0)
+  draws              Int    @default(0)
+  successRate        Int    @default(0)
+  user               User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserWeakness {
+  id                  String   @id @default(cuid())
+  userId              String
+  theme               String
+  successRate         Int
+  mistakes            Int
+  lastPracticedAt     DateTime?
+  recommendedLesson   String
+  recommendedExercise String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, theme])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     Json
+  body      Json
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
