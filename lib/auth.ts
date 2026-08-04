@@ -40,7 +40,7 @@ export async function getCurrentUser() {
     const { payload } = await jwtVerify(token, secret);
     const userId = String(payload.userId || "");
     if (!userId) return null;
-    return prisma.user.findUnique({
+    return await prisma.user.findUnique({
       where: { id: userId },
       include: { profile: true, statistics: true, badges: { include: { badge: true } } }
     });

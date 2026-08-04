@@ -6,9 +6,13 @@ const prisma = new PrismaClient();
 
 async function main() {
   for (const course of courses) {
-    await prisma.course.upsert({
+    const savedCourse = await prisma.course.upsert({
       where: { slug: course.slug },
-      update: {},
+      update: {
+        level: course.level,
+        title: course.title,
+        description: course.description
+      },
       create: {
         slug: course.slug,
         level: course.level,
@@ -32,12 +36,56 @@ async function main() {
         }
       }
     });
+
+    for (const [moduleIndex, module] of course.modules.entries()) {
+      const existingModule = await prisma.module.findFirst({
+        where: { courseId: savedCourse.id, order: moduleIndex + 1 }
+      });
+      const savedModule = existingModule
+        ? await prisma.module.update({
+            where: { id: existingModule.id },
+            data: { title: module.title, order: moduleIndex + 1 }
+          })
+        : await prisma.module.create({
+            data: { courseId: savedCourse.id, order: moduleIndex + 1, title: module.title }
+          });
+
+      for (const [lessonIndex, lesson] of module.lessons.entries()) {
+        await prisma.lesson.upsert({
+          where: { slug: lesson.slug },
+          update: {
+            moduleId: savedModule.id,
+            order: lessonIndex + 1,
+            title: lesson.title,
+            objective: lesson.objective,
+            content: lesson.content,
+            xpReward: lesson.xpReward
+          },
+          create: {
+            moduleId: savedModule.id,
+            slug: lesson.slug,
+            order: lessonIndex + 1,
+            title: lesson.title,
+            objective: lesson.objective,
+            content: lesson.content,
+            xpReward: lesson.xpReward
+          }
+        });
+      }
+    }
   }
 
   for (const exercise of exercises) {
     await prisma.exercise.upsert({
       where: { slug: exercise.slug },
-      update: {},
+      update: {
+        theme: exercise.theme,
+        difficulty: exercise.difficulty,
+        fen: exercise.fen,
+        sideToMove: exercise.sideToMove,
+        solution: exercise.solution,
+        explanation: exercise.explanation
+      },
       create: {
         slug: exercise.slug,
         theme: exercise.theme,
@@ -51,7 +99,7 @@ async function main() {
   }
 
   for (const badge of badges) {
-    await prisma.badge.upsert({ where: { code: badge.code }, update: {}, create: badge });
+    await prisma.badge.upsert({ where: { code: badge.code }, update: badge, create: badge });
   }
 
   await prisma.user.upsert({

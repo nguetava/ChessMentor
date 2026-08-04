@@ -54,7 +54,7 @@ export const courses = [
             objective: { fr: "Verifier l'echec, les cases de fuite, les captures et les interpositions.", de: "Schach, Fluchtfelder, Schlagen und Blocken prufen.", en: "Check for check, escapes, captures and blocks." },
             xpReward: 35,
             content: {
-              startFen: "6k1/5ppp/8/8/8/8/5PPP/6KQ w - - 0 1",
+              startFen: "6k1/6pp/8/7Q/8/8/5PPP/6K1 w - - 0 1",
               summary: {
                 fr: "Il y a mat si le roi est en echec et n'a aucune defense legale.",
                 de: "Matt ist Schach ohne legale Verteidigung.",
@@ -66,7 +66,7 @@ export const courses = [
                 en: "Common mistake: calling mate before checking captures or escapes."
               },
               moves: [
-                { san: "Qh7#", from: "h1", to: "h7", note: { fr: "La dame attaque le roi, protegee par le roi blanc.", de: "Die Dame gibt Schach und ist geschutzt.", en: "The queen checks and is protected." } }
+                { san: "Qe8#", from: "h5", to: "e8", note: { fr: "La dame attaque le roi sur la huitieme rangee et coupe les cases de fuite.", de: "Die Dame greift den Konig auf der achten Reihe an und nimmt Fluchtfelder.", en: "The queen checks on the eighth rank and cuts off escapes." } }
               ],
               quiz: {
                 question: { fr: "Pour etre mat, le roi doit-il etre en echec ?", de: "Muss der Konig im Schach stehen?", en: "Must the king be in check for mate?" },
@@ -75,7 +75,7 @@ export const courses = [
                   { text: { fr: "Non", de: "Nein", en: "No" }, correct: false }
                 ]
               },
-              exercise: { fen: "6k1/5ppp/8/8/8/8/5PPP/6KQ w - - 0 1", solution: ["Qh7#"] }
+              exercise: { fen: "6k1/6pp/8/7Q/8/8/5PPP/6K1 w - - 0 1", solution: ["Qe8#"] }
             }
           }
         ]
@@ -85,14 +85,14 @@ export const courses = [
 ];
 
 export const exercises = [
-  ["mate-1", "mat en un coup", 1, "6k1/5ppp/8/8/8/8/5PPP/6KQ w - - 0 1", "w", ["Qh7#"]],
+  ["mate-1", "mat en un coup", 1, "6k1/6pp/8/7Q/8/8/5PPP/6K1 w - - 0 1", "w", ["Qe8#"]],
   ["fork-1", "fourchette", 2, "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3", "w", ["Nxe5"]],
   ["pin-1", "clouage", 2, "rnbqk2r/ppppbppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQK2R w KQkq - 4 4", "w", ["Bb5"]],
-  ["skewer-1", "enfilade", 3, "4k3/8/8/8/8/8/4r3/4K2R w K - 0 1", "w", ["Rh8+"]],
-  ["discovery-1", "attaque a la decouverte", 3, "4k3/8/8/4r3/8/3B4/8/4K3 w - - 0 1", "w", ["Bg6+"]],
-  ["defender-1", "elimination du defenseur", 3, "6k1/5ppp/8/8/8/8/5PPP/5RK1 w - - 0 1", "w", ["Rf8+"]],
+  ["skewer-1", "enfilade", 3, "4k3/8/8/8/8/8/8/4K2R w K - 0 1", "w", ["Rh8+"]],
+  ["discovery-1", "attaque a la decouverte", 3, "4k3/8/8/8/8/3B4/8/4K3 w - - 0 1", "w", ["Bg6+"]],
+  ["defender-1", "elimination du defenseur", 3, "6k1/6pp/8/8/8/8/6PP/5RK1 w - - 0 1", "w", ["Rf8+"]],
   ["material-1", "gain de materiel", 1, "4k3/8/8/3q4/8/3N4/8/4K3 w - - 0 1", "w", ["Nf4"]],
-  ["defense-1", "defense", 2, "6k1/5ppp/8/8/8/8/5PPP/5RK1 b - - 0 1", "b", ["Kxf8"]],
+  ["defense-1", "defense", 2, "5Rk1/6pp/8/8/8/8/6PP/6K1 b - - 0 1", "b", ["Kxf8"]],
   ["best-1", "meilleur coup", 2, "rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 0 1", "b", ["d5"]],
   ["endgame-1", "finales", 2, "8/8/8/8/4k3/8/4K3/7R w - - 0 1", "w", ["Rh4+"]]
 ].map(([slug, theme, difficulty, fen, sideToMove, solution]) => ({

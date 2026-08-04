@@ -2,7 +2,7 @@
 
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export function ChessBoard({
   fen,
@@ -16,34 +16,43 @@ export function ChessBoard({
   arrows?: [string, string, string?][];
 }) {
   const [selected, setSelected] = useState<string | null>(null);
+  const [localFen, setLocalFen] = useState(fen);
+  const displayFen = onMove ? fen : localFen;
+
+  useEffect(() => {
+    setLocalFen(fen);
+    setSelected(null);
+  }, [fen]);
+
   const legalSquares = useMemo(() => {
     if (!selected) return {};
-    const chess = new Chess(fen);
+    const chess = new Chess(displayFen);
     return {
       [selected]: { background: "rgba(181,139,50,.35)" },
       ...Object.fromEntries(chess.moves({ square: selected as never, verbose: true }).map((move) => [move.to, { background: "rgba(215,109,87,.35)", borderRadius: "50%" }]))
     };
-  }, [fen, selected]);
+  }, [displayFen, selected]);
 
   function move(from: string, to: string) {
-    const chess = new Chess(fen);
+    const chess = new Chess(displayFen);
     const result = chess.move({ from, to, promotion: "q" });
     if (!result) return false;
-    onMove?.(from, to, result.san, chess.fen());
+    if (onMove) onMove(from, to, result.san, chess.fen());
+    else setLocalFen(chess.fen());
     setSelected(null);
     return true;
   }
 
   return (
     <Chessboard
-      position={fen}
+      position={displayFen}
       boardOrientation={orientation}
       arePiecesDraggable
       customArrows={arrows as never}
       customSquareStyles={legalSquares}
       onPieceDrop={(from, to) => move(from, to)}
       onSquareClick={(square) => {
-        const chess = new Chess(fen);
+        const chess = new Chess(displayFen);
         const piece = chess.get(square as never);
         const isOwnPiece = piece?.color === chess.turn();
 
