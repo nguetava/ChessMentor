@@ -1,6 +1,7 @@
 import { Chess, Move } from "chess.js";
 
 const pieceValues: Record<string, number> = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 0 };
+const centerSquares = ["d4", "d5", "e4", "e5", "c4", "c5", "f4", "f5"];
 
 export function legalMoves(fen: string, square?: string) {
   const chess = new Chess(fen);
@@ -24,6 +25,80 @@ function evaluateMaterial(chess: Chess) {
     }, 0);
 }
 
+function evaluatePosition(chess: Chess) {
+  if (chess.isCheckmate()) return chess.turn() === "w" ? -100000 : 100000;
+  if (chess.isDraw() || chess.isStalemate() || chess.isThreefoldRepetition()) return 0;
+
+  const material = evaluateMaterial(chess);
+  const mobilityTurn = chess.turn();
+  const mobility = chess.moves().length * (mobilityTurn === "w" ? 2 : -2);
+  const board = chess.board();
+  let development = 0;
+  let center = 0;
+
+  for (const row of board) {
+    for (const piece of row) {
+      if (!piece) continue;
+      const sign = piece.color === "w" ? 1 : -1;
+      if ((piece.type === "n" || piece.type === "b") && !["b1", "g1", "b8", "g8", "c1", "f1", "c8", "f8"].includes(piece.square)) {
+        development += sign * 12;
+      }
+      if (centerSquares.includes(piece.square)) center += sign * 10;
+    }
+  }
+
+  return material + mobility + development + center;
+}
+
+function moveBonus(move: Move, clone: Chess) {
+  const capture = move.captured ? (pieceValues[move.captured] ?? 0) - (pieceValues[move.piece] ?? 0) * 0.12 : 0;
+  const check = clone.isCheck() ? 45 : 0;
+  const mate = clone.isCheckmate() ? 100000 : 0;
+  const center = centerSquares.includes(move.to) ? 18 : 0;
+  const promotion = move.promotion ? 700 : 0;
+  return capture + check + mate + center + promotion;
+}
+
+function orderedMoves(chess: Chess) {
+  return (chess.moves({ verbose: true }) as Move[])
+    .map((move) => {
+      const clone = new Chess(chess.fen());
+      clone.move(move.san);
+      return { move, score: moveBonus(move, clone) };
+    })
+    .sort((a, b) => b.score - a.score)
+    .map(({ move }) => move);
+}
+
+function minimax(chess: Chess, depth: number, alpha: number, beta: number): number {
+  if (depth === 0 || chess.isGameOver()) return evaluatePosition(chess);
+
+  const maximizingWhite = chess.turn() === "w";
+  const moves = orderedMoves(chess);
+
+  if (maximizingWhite) {
+    let best = -Infinity;
+    for (const move of moves) {
+      const clone = new Chess(chess.fen());
+      clone.move(move.san);
+      best = Math.max(best, minimax(clone, depth - 1, alpha, beta));
+      alpha = Math.max(alpha, best);
+      if (beta <= alpha) break;
+    }
+    return best;
+  }
+
+  let best = Infinity;
+  for (const move of moves) {
+    const clone = new Chess(chess.fen());
+    clone.move(move.san);
+    best = Math.min(best, minimax(clone, depth - 1, alpha, beta));
+    beta = Math.min(beta, best);
+    if (beta <= alpha) break;
+  }
+  return best;
+}
+
 export function chooseComputerMove(fen: string, difficulty: "easy" | "medium" | "hard") {
   const chess = new Chess(fen);
   const moves = chess.moves({ verbose: true }) as Move[];
@@ -33,12 +108,10 @@ export function chooseComputerMove(fen: string, difficulty: "easy" | "medium" | 
   const scored = moves.map((move) => {
     const clone = new Chess(fen);
     clone.move(move.san);
-    const material = evaluateMaterial(clone) * (chess.turn() === "w" ? 1 : -1);
-    const tactical = move.captured ? (pieceValues[move.captured] ?? 0) : 0;
-    const check = clone.isCheck() ? 40 : 0;
-    const mate = clone.isCheckmate() ? 100000 : 0;
-    const center = ["d4", "d5", "e4", "e5"].includes(move.to) ? 20 : 0;
-    return { move, score: material + tactical + check + mate + center + Math.random() * (difficulty === "medium" ? 80 : 15) };
+    const perspective = chess.turn() === "w" ? 1 : -1;
+    const searchScore = difficulty === "hard" ? minimax(clone, 2, -Infinity, Infinity) * perspective : evaluatePosition(clone) * perspective;
+    const noise = difficulty === "medium" ? Math.random() * 90 : 0;
+    return { move, score: searchScore + moveBonus(move, clone) + noise };
   });
   scored.sort((a, b) => b.score - a.score);
   return scored[0].move;

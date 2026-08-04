@@ -32,9 +32,14 @@ export function PlayComputer() {
   function organizeGame() {
     const side = orientation === "white" ? "Blancs" : "Noirs";
     const mode = training ? `entrainement ${assist}` : "normal sans conseils";
+    const next = new Chess();
+    if (orientation === "black") {
+      const computer = chooseComputerMove(next.fen(), difficulty);
+      if (computer) next.move(computer.san);
+    }
     setScheduled(`Partie organisee : ${side}, ${difficulty}, ${timeControl}, objectif "${lessonGoal}", mode ${mode}.`);
     setMessage(training ? assistanceCopy[assist] : "Mode normal : aucune aide en direct pendant la partie.");
-    update(new Chess());
+    update(next);
   }
 
   function onMove(_from: string, _to: string, san: string, fen: string) {

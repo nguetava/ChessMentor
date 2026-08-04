@@ -19,7 +19,10 @@ export function ChessBoard({
   const legalSquares = useMemo(() => {
     if (!selected) return {};
     const chess = new Chess(fen);
-    return Object.fromEntries(chess.moves({ square: selected as never, verbose: true }).map((move) => [move.to, { background: "rgba(215,109,87,.35)", borderRadius: "50%" }]));
+    return {
+      [selected]: { background: "rgba(181,139,50,.35)" },
+      ...Object.fromEntries(chess.moves({ square: selected as never, verbose: true }).map((move) => [move.to, { background: "rgba(215,109,87,.35)", borderRadius: "50%" }]))
+    };
   }, [fen, selected]);
 
   function move(from: string, to: string) {
@@ -40,10 +43,17 @@ export function ChessBoard({
       customSquareStyles={legalSquares}
       onPieceDrop={(from, to) => move(from, to)}
       onSquareClick={(square) => {
-        if (selected) {
-          if (!move(selected, square)) setSelected(square);
-        } else {
+        const chess = new Chess(fen);
+        const piece = chess.get(square as never);
+        const isOwnPiece = piece?.color === chess.turn();
+
+        if (isOwnPiece) {
           setSelected(square);
+          return;
+        }
+
+        if (selected) {
+          if (!move(selected, square)) setSelected(null);
         }
       }}
     />
