@@ -34,6 +34,8 @@ export function LessonViewer() {
   const [lessonIndex, setLessonIndex] = useState(0);
   const [step, setStep] = useState(0);
   const [stage, setStage] = useState<LessonStage>("theory");
+  const [theoryStep, setTheoryStep] = useState(0);
+  const [railOpen, setRailOpen] = useState(true);
   const [quiz, setQuiz] = useState("");
   const [completed, setCompleted] = useState<Set<string>>(() => new Set());
 
@@ -74,6 +76,7 @@ export function LessonViewer() {
     setLessonIndex(0);
     setStep(0);
     setStage("theory");
+    setTheoryStep(0);
     setQuiz("");
     setMode("lessons");
   }
@@ -83,6 +86,7 @@ export function LessonViewer() {
     setLessonIndex(nextLessonIndex);
     setStep(0);
     setStage("theory");
+    setTheoryStep(0);
     setQuiz("");
     setMode("player");
   }
@@ -112,6 +116,11 @@ export function LessonViewer() {
     setStep(step + 1);
   }
 
+  function changeStage(nextStage: LessonStage) {
+    setStage(nextStage);
+    if (nextStage === "theory") setTheoryStep(0);
+  }
+
   function lessonStatus(index: number, done: boolean, locked: boolean) {
     if (done) return "Terminee";
     if (locked) return "Bloquee";
@@ -120,10 +129,26 @@ export function LessonViewer() {
   }
 
   function renderLessonRail() {
+    if (!railOpen) {
+      return (
+        <aside className="hidden min-h-0 rounded border border-black/10 bg-white dark:border-white/10 dark:bg-white/5 xl:grid xl:place-items-start">
+          <button
+            className="grid h-full w-full place-items-center px-2 py-3 text-xs font-semibold uppercase text-coral [writing-mode:vertical-rl]"
+            onClick={() => setRailOpen(true)}
+          >
+            Parcours
+          </button>
+        </aside>
+      );
+    }
+
     return (
       <aside className="hidden min-h-0 overflow-hidden rounded border border-black/10 bg-white dark:border-white/10 dark:bg-white/5 xl:grid xl:grid-rows-[auto_minmax(0,1fr)]">
         <div className="border-b border-black/10 p-3 dark:border-white/10">
-          <p className="text-xs font-semibold uppercase text-coral">Parcours</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold uppercase text-coral">Parcours</p>
+            <button className="rounded border border-black/10 px-2 py-1 text-xs dark:border-white/10" onClick={() => setRailOpen(false)}>Plier</button>
+          </div>
           <h2 className="truncate font-semibold">{pick(course.title)}</h2>
           <div className="mt-2 h-2 overflow-hidden rounded bg-black/10 dark:bg-white/10"><div className="h-full bg-coral" style={{ width: `${progress}%` }} /></div>
         </div>
@@ -165,6 +190,33 @@ export function LessonViewer() {
     demo: "Demonstration",
     exercise: "Exercice"
   };
+
+  const pieceIntroCards = lesson.slug === "echiquier-pieces"
+    ? [
+        {
+          title: "Le but du jeu",
+          body: "Une partie d'echecs oppose deux camps, les Blancs et les Noirs. Le but n'est pas de capturer toutes les pieces : il faut attaquer le roi adverse de telle sorte qu'il ne puisse plus fuir, capturer l'attaquant ou bloquer l'attaque. C'est l'echec et mat."
+        },
+        {
+          title: "L'echiquier",
+          body: "L'echiquier contient 64 cases, huit colonnes de a a h et huit rangees de 1 a 8. Les cases claires et foncees alternent. Lire une case comme e4 ou d5 permet de parler la meme langue que les joueurs et de suivre une partie sans confusion."
+        },
+        {
+          title: "Les pieces et leur role",
+          body: "Le roi doit etre protege. La dame est la piece la plus mobile. Les tours dominent lignes et colonnes. Les fous travaillent sur les diagonales. Les cavaliers sautent en L et surprennent. Les pions avancent lentement, controlent en diagonale et peuvent devenir tres forts en arrivant au bout."
+        }
+      ]
+    : [];
+
+  const theoryCards = [
+    ...pieceIntroCards,
+    { title: "Idee principale", body: pick(content.summary) },
+    { title: "Methode a retenir", body: pick(content.method) },
+    { title: "Points de controle", body: content.checklist.map((item) => pick(item)) },
+    { title: "Erreur typique", body: pick(content.mistake) }
+  ];
+
+  const currentTheoryCard = theoryCards[Math.min(theoryStep, theoryCards.length - 1)];
 
   if (mode === "courses") {
     const totalLessons = courses.reduce((sum, item) => sum + item.modules.flatMap((module) => module.lessons).length, 0);
@@ -298,66 +350,53 @@ export function LessonViewer() {
   }
 
   return (
-    <main className="mx-auto grid h-[calc(100svh-124px)] max-w-none grid-rows-[auto_minmax(0,1fr)] gap-2 overflow-hidden px-3 py-2 lg:h-[calc(100svh-64px)] lg:max-w-7xl lg:px-4">
-      <header className="grid gap-1 border-b border-black/10 pb-2 dark:border-white/10">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <button className="flex items-center gap-2 rounded border border-black/10 px-3 py-2 text-sm dark:border-white/10" onClick={() => setMode("lessons")}>
-            <ArrowLeft size={16} /> Lecons du niveau
-          </button>
-          {completed.has(currentKey) && <span className="inline-flex items-center gap-2 rounded bg-ink px-3 py-2 text-sm text-white dark:bg-coral"><CheckCircle2 size={17} /> Terminee</span>}
-        </div>
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase text-coral">Lecon {lessonIndex + 1}/{lessons.length} - Niveau {course.level}</p>
-          <h1 className="truncate text-xl font-semibold lg:text-2xl">{pick(lesson.title)}</h1>
-          <p className="hidden max-w-5xl truncate text-sm text-sage dark:text-mint sm:block">{pick(lesson.objective)}</p>
-        </div>
-        <div className="grid grid-cols-3 gap-2 text-xs sm:max-w-md">
-          {(Object.keys(stageLabels) as LessonStage[]).map((item) => (
-            <button
-              key={item}
-              className={`rounded border px-2 py-1.5 font-semibold ${stage === item ? "border-ink bg-ink text-white dark:border-coral dark:bg-coral" : "border-black/10 dark:border-white/10"}`}
-              onClick={() => setStage(item)}
-            >
-              {stageLabels[item]}
-            </button>
-          ))}
-        </div>
-      </header>
-
+    <main className="mx-auto grid h-[calc(100svh-124px)] max-w-none overflow-hidden px-3 py-2 lg:h-[calc(100svh-64px)] lg:max-w-[1800px] lg:px-4">
       {stage === "theory" ? (
-        <section className="grid min-h-0 gap-3 overflow-hidden md:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[280px_minmax(0,1fr)_340px]">
+        <section className={`grid min-h-0 gap-3 overflow-hidden md:grid-cols-[minmax(0,1fr)_320px] ${railOpen ? "xl:grid-cols-[280px_minmax(0,1fr)_340px]" : "xl:grid-cols-[48px_minmax(0,1fr)_340px]"}`}>
           {renderLessonRail()}
           <article className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded border border-black/10 bg-white dark:border-white/10 dark:bg-white/5">
             <div className="border-b border-black/10 p-3 dark:border-white/10">
-              <p className="text-xs font-semibold uppercase text-coral">Avant de toucher aux pieces</p>
-              <h2 className="text-xl font-semibold">La theorie de cette lecon</h2>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <button className="flex items-center gap-2 rounded border border-black/10 px-3 py-2 text-sm dark:border-white/10" onClick={() => setMode("lessons")}>
+                  <ArrowLeft size={16} /> Niveau
+                </button>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  {(Object.keys(stageLabels) as LessonStage[]).map((item) => (
+                    <button
+                      key={item}
+                      className={`rounded border px-2 py-1.5 font-semibold ${stage === item ? "border-ink bg-ink text-white dark:border-coral dark:bg-coral" : "border-black/10 dark:border-white/10"}`}
+                      onClick={() => changeStage(item)}
+                    >
+                      {stageLabels[item]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="mt-2 text-xs font-semibold uppercase text-coral">Lecon {lessonIndex + 1}/{lessons.length}</p>
+              <h1 className="truncate text-xl font-semibold lg:text-2xl">{pick(lesson.title)}</h1>
+              <p className="truncate text-sm text-sage dark:text-mint">{pick(lesson.objective)}</p>
             </div>
             <div className="min-h-0 overflow-y-auto p-3">
-              <div className="grid gap-3 text-sm">
-                <section className="rounded bg-mint p-3 text-ink">
-                  <h3 className="font-semibold">Idee principale</h3>
-                  <p className="mt-2">{pick(content.summary)}</p>
-                </section>
-                <section className="rounded border border-black/10 p-3 dark:border-white/10">
-                  <h3 className="flex items-center gap-2 font-semibold"><Target size={17} /> Methode a retenir</h3>
-                  <p className="mt-2 text-sage dark:text-mint">{pick(content.method)}</p>
-                </section>
-                <section className="rounded border border-black/10 p-3 dark:border-white/10">
-                  <h3 className="flex items-center gap-2 font-semibold"><ListChecks size={17} /> Points de controle</h3>
-                  <ul className="mt-2 grid gap-1 text-sage dark:text-mint">
-                    {content.checklist.map((item) => <li key={pick(item)}>- {pick(item)}</li>)}
+              <section className="grid h-full content-center gap-4 rounded bg-mint p-5 text-ink">
+                <div className="flex items-center justify-between gap-3 text-sm">
+                  <span className="font-semibold">Theorie {theoryStep + 1}/{theoryCards.length}</span>
+                  <div className="h-2 w-32 overflow-hidden rounded bg-ink/15"><div className="h-full bg-coral" style={{ width: `${((theoryStep + 1) / theoryCards.length) * 100}%` }} /></div>
+                </div>
+                <h2 className="text-3xl font-semibold">{currentTheoryCard.title}</h2>
+                {Array.isArray(currentTheoryCard.body) ? (
+                  <ul className="grid gap-3 text-base leading-relaxed">
+                    {currentTheoryCard.body.map((item) => <li key={item} className="rounded bg-white/70 p-3">- {item}</li>)}
                   </ul>
-                </section>
-                <section className="rounded border border-black/10 p-3 dark:border-white/10">
-                  <h3 className="font-semibold">Erreur typique</h3>
-                  <p className="mt-2 text-sage dark:text-mint">{pick(content.mistake)}</p>
-                </section>
-              </div>
+                ) : (
+                  <p className="max-w-4xl text-lg leading-relaxed">{currentTheoryCard.body}</p>
+                )}
+              </section>
             </div>
-            <div className="grid grid-cols-2 gap-2 border-t border-black/10 p-3 dark:border-white/10">
+            <div className="grid grid-cols-3 gap-2 border-t border-black/10 p-3 dark:border-white/10">
+              <button className="rounded border px-3 py-2 text-sm" onClick={() => setTheoryStep(Math.max(0, theoryStep - 1))} disabled={theoryStep === 0}>Precedent</button>
               <button className="rounded border px-3 py-2 text-sm" onClick={() => setMode("lessons")}>Retour</button>
-              <button className="flex items-center justify-center gap-2 rounded bg-ink px-3 py-2 text-sm text-white dark:bg-coral" onClick={() => setStage("demo")}>
-                Voir l&apos;exemple <ChevronRight size={17} />
+              <button className="flex items-center justify-center gap-2 rounded bg-ink px-3 py-2 text-sm text-white dark:bg-coral" onClick={() => theoryStep < theoryCards.length - 1 ? setTheoryStep(theoryStep + 1) : changeStage("demo")}>
+                {theoryStep < theoryCards.length - 1 ? "Suivant" : "Voir l'exemple"} <ChevronRight size={17} />
               </button>
             </div>
           </article>
@@ -382,7 +421,7 @@ export function LessonViewer() {
           </aside>
         </section>
       ) : (
-      <section className="grid min-h-0 gap-3 overflow-hidden md:grid-cols-[minmax(260px,1fr)_minmax(280px,360px)] xl:grid-cols-[280px_minmax(420px,1fr)_380px]">
+      <section className={`grid min-h-0 gap-3 overflow-hidden md:grid-cols-[minmax(260px,1fr)_minmax(280px,360px)] ${railOpen ? "xl:grid-cols-[280px_minmax(420px,1fr)_380px]" : "xl:grid-cols-[48px_minmax(420px,1fr)_380px]"}`}>
         {renderLessonRail()}
         <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-2 overflow-hidden">
           <div className="mx-auto grid min-h-0 w-full max-w-[min(48svh,440px)] place-items-center overflow-hidden sm:max-w-[min(54svh,520px)] lg:max-w-[min(62svh,600px)]">
@@ -398,6 +437,29 @@ export function LessonViewer() {
         <aside className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] overflow-hidden rounded border border-black/10 dark:border-white/10">
           <div className="min-h-0 overflow-y-auto p-3">
             <div className="grid gap-2 text-sm">
+              <div className="grid gap-2 border-b border-black/10 pb-2 dark:border-white/10">
+                <div className="flex items-center justify-between gap-2">
+                  <button className="flex items-center gap-2 rounded border border-black/10 px-3 py-2 text-sm dark:border-white/10" onClick={() => setMode("lessons")}>
+                    <ArrowLeft size={16} /> Niveau
+                  </button>
+                  {completed.has(currentKey) && <span className="inline-flex items-center gap-2 rounded bg-ink px-2 py-1 text-xs text-white dark:bg-coral"><CheckCircle2 size={15} /> Terminee</span>}
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  {(Object.keys(stageLabels) as LessonStage[]).map((item) => (
+                    <button
+                      key={item}
+                      className={`rounded border px-2 py-1.5 font-semibold ${stage === item ? "border-ink bg-ink text-white dark:border-coral dark:bg-coral" : "border-black/10 dark:border-white/10"}`}
+                      onClick={() => changeStage(item)}
+                    >
+                      {stageLabels[item]}
+                    </button>
+                  ))}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase text-coral">Lecon {lessonIndex + 1}/{lessons.length}</p>
+                  <h1 className="truncate text-lg font-semibold">{pick(lesson.title)}</h1>
+                </div>
+              </div>
               <p>{pick(content.summary)}</p>
               <p className="rounded bg-coral/10 p-2">{step ? pick(content.moves[step - 1].note) : "Avancez coup par coup pour voir l'explication."}</p>
               <section className="rounded border border-black/10 p-2 dark:border-white/10">
@@ -443,7 +505,7 @@ export function LessonViewer() {
               </button>
             </div>
             {stage === "demo" && (
-              <button className="flex min-h-10 items-center justify-center gap-2 rounded bg-ink px-3 py-2 text-sm text-white dark:bg-coral" onClick={() => setStage("exercise")}>
+              <button className="flex min-h-10 items-center justify-center gap-2 rounded bg-ink px-3 py-2 text-sm text-white dark:bg-coral" onClick={() => changeStage("exercise")}>
                 Passer a l&apos;exercice <ChevronRight size={17} />
               </button>
             )}
