@@ -1,353 +1,653 @@
 export type Locale = "fr" | "de" | "en";
 export type TText = Record<Locale, string>;
 
+type LessonPattern = {
+  fen: string;
+  solution: string;
+  move: { san: string; from: string; to: string };
+  note: string;
+  quizQuestion: string;
+  quizGood: string;
+  quizBad: string;
+};
+
+type LessonSpec = {
+  slug: string;
+  title: string;
+  objective: string;
+  focus: string;
+  commonMistake: string;
+  pattern: keyof typeof patterns;
+  xp?: number;
+};
+
+const tr = (text: string): TText => ({ fr: text, de: text, en: text });
+
 export const levels = [
-  { key: "NO_RULES", label: { fr: "Je ne connais pas les regles", de: "Ich kenne die Regeln nicht", en: "I do not know the rules" } },
-  { key: "BEGINNER", label: { fr: "Debutant", de: "Anfanger", en: "Beginner" } },
-  { key: "INTERMEDIATE", label: { fr: "Intermediaire", de: "Fortgeschritten", en: "Intermediate" } },
-  { key: "ADVANCED", label: { fr: "Avance", de: "Sehr erfahren", en: "Advanced" } }
+  { key: "NO_RULES", label: tr("Je ne connais pas les regles") },
+  { key: "BEGINNER", label: tr("Debutant") },
+  { key: "INTERMEDIATE", label: tr("Intermediaire") },
+  { key: "ADVANCED", label: tr("Avance") }
 ];
+
+const patterns = {
+  board: {
+    fen: "4k3/8/8/3p4/8/3R4/8/4K3 w - - 0 1",
+    solution: "Rxd5",
+    move: { san: "Rxd5", from: "d3", to: "d5" },
+    note: "La tour suit la colonne sans sauter et capture la piece placee devant elle.",
+    quizQuestion: "Quelle piece se deplace en ligne droite sur les colonnes et les rangees ?",
+    quizGood: "La tour",
+    quizBad: "Le cavalier"
+  },
+  knight: {
+    fen: "4k3/8/8/8/8/2N5/8/4K3 w - - 0 1",
+    solution: "Nd5",
+    move: { san: "Nd5", from: "c3", to: "d5" },
+    note: "Le cavalier rejoint d5 avec un saut en L et change de couleur de case.",
+    quizQuestion: "Quelle piece peut sauter par-dessus les autres ?",
+    quizGood: "Le cavalier",
+    quizBad: "Le fou"
+  },
+  bishop: {
+    fen: "4k3/8/5p2/8/8/2B5/8/4K3 w - - 0 1",
+    solution: "Bxf6",
+    move: { san: "Bxf6", from: "c3", to: "f6" },
+    note: "Le fou suit la diagonale c3-d4-e5-f6 et capture.",
+    quizQuestion: "Sur quelles lignes le fou agit-il ?",
+    quizGood: "Les diagonales",
+    quizBad: "Les colonnes seulement"
+  },
+  queenMate: {
+    fen: "6k1/6pp/8/7Q/8/8/5PPP/6K1 w - - 0 1",
+    solution: "Qe8#",
+    move: { san: "Qe8#", from: "h5", to: "e8" },
+    note: "La dame donne echec, coupe les cases de fuite et termine la partie.",
+    quizQuestion: "Avant d'annoncer mat, que faut-il verifier ?",
+    quizGood: "Echec, fuite, capture et interposition",
+    quizBad: "Seulement la valeur des pieces"
+  },
+  opening: {
+    fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+    solution: "e4",
+    move: { san: "e4", from: "e2", to: "e4" },
+    note: "Le pion central controle des cases importantes et libere les pieces.",
+    quizQuestion: "Quel principe aide a bien commencer ?",
+    quizGood: "Controler le centre et developper",
+    quizBad: "Bouger la meme piece sans raison"
+  },
+  center: {
+    fen: "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
+    solution: "d4",
+    move: { san: "d4", from: "d2", to: "d4" },
+    note: "Le pion d conteste e5 et ouvre des lignes pour les pieces blanches.",
+    quizQuestion: "Pourquoi pousser un pion central ?",
+    quizGood: "Pour gagner de l'espace et ouvrir les lignes",
+    quizBad: "Pour cacher le roi"
+  },
+  castle: {
+    fen: "r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4",
+    solution: "O-O",
+    move: { san: "O-O", from: "e1", to: "g1" },
+    note: "Le roi quitte le centre et la tour rejoint une colonne plus active.",
+    quizQuestion: "Quel est le role principal du roque ?",
+    quizGood: "Mettre le roi en securite",
+    quizBad: "Promouvoir un pion"
+  },
+  fork: {
+    fen: "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
+    solution: "Nxe5",
+    move: { san: "Nxe5", from: "f3", to: "e5" },
+    note: "Le cavalier capture au centre et cree des menaces tactiques.",
+    quizQuestion: "Pourquoi le cavalier cree-t-il souvent des surprises ?",
+    quizGood: "Il saute et attaque des cases peu visibles",
+    quizBad: "Il avance comme une tour"
+  },
+  pin: {
+    fen: "rnbqk2r/ppppbppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQK2R w KQkq - 4 4",
+    solution: "Bb5",
+    move: { san: "Bb5", from: "e2", to: "b5" },
+    note: "Le fou cree une pression sur une piece qui protege une cible plus importante.",
+    quizQuestion: "Qu'est-ce qu'un clouage ?",
+    quizGood: "Une piece ne peut pas bouger sans exposer une cible",
+    quizBad: "Une avance automatique de pion"
+  },
+  rookCheck: {
+    fen: "4k3/8/8/8/8/8/8/4K2R w K - 0 1",
+    solution: "Rh8+",
+    move: { san: "Rh8+", from: "h1", to: "h8" },
+    note: "La tour utilise la colonne ouverte pour donner echec au roi.",
+    quizQuestion: "Pourquoi une colonne ouverte est-elle utile ?",
+    quizGood: "Elle donne de l'activite aux tours",
+    quizBad: "Elle bloque les tours"
+  },
+  discovery: {
+    fen: "4k3/8/8/8/8/3B4/8/4K3 w - - 0 1",
+    solution: "Bg6+",
+    move: { san: "Bg6+", from: "d3", to: "g6" },
+    note: "Le fou change de diagonale et cree un echec actif.",
+    quizQuestion: "Que cherche-t-on dans une attaque a la decouverte ?",
+    quizGood: "Liberer une ligne ou une menace cachee",
+    quizBad: "Echanger sans calcul"
+  },
+  defender: {
+    fen: "6k1/6pp/8/8/8/8/6PP/5RK1 w - - 0 1",
+    solution: "Rf8+",
+    move: { san: "Rf8+", from: "f1", to: "f8" },
+    note: "La tour force le roi a reagir et reduit ses defenses.",
+    quizQuestion: "Quel est le but d'eliminer un defenseur ?",
+    quizGood: "Retirer la piece qui tient la position",
+    quizBad: "Donner une case au roi adverse"
+  },
+  pawnEndgame: {
+    fen: "8/8/8/8/4k3/8/4K3/7R w - - 0 1",
+    solution: "Rh4+",
+    move: { san: "Rh4+", from: "h1", to: "h4" },
+    note: "L'echec force le roi a reculer et prepare un plan de finale.",
+    quizQuestion: "En finale, que faut-il calculer avec soin ?",
+    quizGood: "Les cases de roi et les tempos",
+    quizBad: "Seulement les echecs spectaculaires"
+  },
+  blackDefense: {
+    fen: "5Rk1/6pp/8/8/8/8/6PP/6K1 b - - 0 1",
+    solution: "Kxf8",
+    move: { san: "Kxf8", from: "g8", to: "f8" },
+    note: "Le roi capture la tour quand la capture est legale et necessaire.",
+    quizQuestion: "Comment defendre une position attaquee ?",
+    quizGood: "Verifier captures, fuites et blocages",
+    quizBad: "Jouer vite sans verifier l'echec"
+  }
+} satisfies Record<string, LessonPattern>;
+
+function makeLesson(spec: LessonSpec) {
+  const pattern = patterns[spec.pattern];
+
+  return {
+    slug: spec.slug,
+    title: tr(spec.title),
+    objective: tr(spec.objective),
+    xpReward: spec.xp ?? 35,
+    content: {
+      startFen: pattern.fen,
+      summary: tr(`${spec.focus} Cette lecon montre une idee pratique avec un exemple jouable sur l'echiquier.`),
+      mistake: tr(spec.commonMistake),
+      moves: [
+        {
+          san: pattern.move.san,
+          from: pattern.move.from,
+          to: pattern.move.to,
+          note: tr(pattern.note)
+        }
+      ],
+      quiz: {
+        question: tr(pattern.quizQuestion),
+        answers: [
+          { text: tr(pattern.quizGood), correct: true },
+          { text: tr(pattern.quizBad), correct: false }
+        ]
+      },
+      exercise: { fen: pattern.fen, solution: [pattern.solution] }
+    }
+  };
+}
+
+function makeModule(title: string, lessons: LessonSpec[]) {
+  return { title: tr(title), lessons: lessons.map(makeLesson) };
+}
 
 export const courses = [
   {
-    slug: "decouverte",
+    slug: "niveau-fondations",
     level: 1,
-    title: { fr: "Decouverte des echecs", de: "Schach entdecken", en: "Discover chess" },
-    description: { fr: "Cases, pieces, echecs, mats et regles speciales.", de: "Felder, Figuren, Schach, Matt und Sonderregeln.", en: "Squares, pieces, checks, mates and special rules." },
+    title: tr("Niveau 1 - Bases et premiers mats"),
+    description: tr("Un parcours pour comprendre l'echiquier, les pieces, les regles speciales, les mats simples et les premiers principes de partie."),
     modules: [
-      {
-        title: { fr: "Premiers coups", de: "Erste Zuge", en: "First moves" },
-        lessons: [
-          {
-            slug: "tour",
-            title: { fr: "Comment se deplace la tour ?", de: "Wie zieht der Turm?", en: "How does the rook move?" },
-            objective: { fr: "Comprendre les lignes droites et les captures de la tour.", de: "Gerade Linien und Schlage des Turms verstehen.", en: "Understand rook lines and captures." },
-            xpReward: 25,
-            content: {
-              startFen: "4k3/8/8/3p4/8/3R4/8/4K3 w - - 0 1",
-              summary: {
-                fr: "La tour se deplace horizontalement ou verticalement, sans sauter par-dessus une piece.",
-                de: "Der Turm zieht waagerecht oder senkrecht und springt nicht uber Figuren.",
-                en: "The rook moves horizontally or vertically and cannot jump over pieces."
-              },
-              mistake: {
-                fr: "Erreur frequente : essayer de jouer en diagonale avec la tour.",
-                de: "Haufiger Fehler: den Turm diagonal ziehen.",
-                en: "Common mistake: trying to move the rook diagonally."
-              },
-              moves: [
-                { san: "Rxd5", from: "d3", to: "d5", note: { fr: "La tour monte sur la meme colonne et capture.", de: "Der Turm zieht auf derselben Linie und schlagt.", en: "The rook goes up the file and captures." } }
-              ],
-              quiz: {
-                question: { fr: "La tour peut-elle sauter une piece ?", de: "Kann der Turm uber eine Figur springen?", en: "Can the rook jump over a piece?" },
-                answers: [
-                  { text: { fr: "Non", de: "Nein", en: "No" }, correct: true },
-                  { text: { fr: "Oui", de: "Ja", en: "Yes" }, correct: false }
-                ]
-              },
-              exercise: { fen: "4k3/8/8/3p4/8/3R4/8/4K3 w - - 0 1", solution: ["Rxd5"] }
-            }
-          },
-          {
-            slug: "mat",
-            title: { fr: "Comment reconnaitre un echec et mat ?", de: "Wie erkennt man Schachmatt?", en: "How to recognize checkmate?" },
-            objective: { fr: "Verifier l'echec, les cases de fuite, les captures et les interpositions.", de: "Schach, Fluchtfelder, Schlagen und Blocken prufen.", en: "Check for check, escapes, captures and blocks." },
-            xpReward: 35,
-            content: {
-              startFen: "6k1/6pp/8/7Q/8/8/5PPP/6K1 w - - 0 1",
-              summary: {
-                fr: "Il y a mat si le roi est en echec et n'a aucune defense legale.",
-                de: "Matt ist Schach ohne legale Verteidigung.",
-                en: "Checkmate is check with no legal defense."
-              },
-              mistake: {
-                fr: "Erreur frequente : crier mat sans verifier si le roi peut capturer ou fuir.",
-                de: "Haufiger Fehler: Matt sagen, ohne Flucht oder Schlag zu prufen.",
-                en: "Common mistake: calling mate before checking captures or escapes."
-              },
-              moves: [
-                { san: "Qe8#", from: "h5", to: "e8", note: { fr: "La dame attaque le roi sur la huitieme rangee et coupe les cases de fuite.", de: "Die Dame greift den Konig auf der achten Reihe an und nimmt Fluchtfelder.", en: "The queen checks on the eighth rank and cuts off escapes." } }
-              ],
-              quiz: {
-                question: { fr: "Pour etre mat, le roi doit-il etre en echec ?", de: "Muss der Konig im Schach stehen?", en: "Must the king be in check for mate?" },
-                answers: [
-                  { text: { fr: "Oui", de: "Ja", en: "Yes" }, correct: true },
-                  { text: { fr: "Non", de: "Nein", en: "No" }, correct: false }
-                ]
-              },
-              exercise: { fen: "6k1/6pp/8/7Q/8/8/5PPP/6K1 w - - 0 1", solution: ["Qe8#"] }
-            }
-          },
-          {
-            slug: "cavalier",
-            title: { fr: "Le cavalier saute", de: "Der Springer springt", en: "The knight jumps" },
-            objective: { fr: "Comprendre le saut en L et reperer les cases d'arrivee.", de: "Den L-Sprung verstehen und Zielfelder erkennen.", en: "Understand the L-shaped jump and target squares." },
-            xpReward: 25,
-            content: {
-              startFen: "4k3/8/8/8/8/2N5/8/4K3 w - - 0 1",
-              summary: {
-                fr: "Le cavalier avance en forme de L et peut sauter par-dessus les pieces.",
-                de: "Der Springer zieht in L-Form und kann uber Figuren springen.",
-                en: "The knight moves in an L shape and can jump over pieces."
-              },
-              mistake: {
-                fr: "Erreur frequente : chercher une ligne droite alors que le cavalier change de couleur de case a chaque saut.",
-                de: "Haufiger Fehler: eine gerade Linie suchen, obwohl der Springer die Feldfarbe wechselt.",
-                en: "Common mistake: looking for a straight line while the knight changes square color every jump."
-              },
-              moves: [
-                { san: "Nd5", from: "c3", to: "d5", note: { fr: "De c3, le cavalier rejoint d5 en un saut en L.", de: "Von c3 springt der Springer nach d5.", en: "From c3, the knight reaches d5 with an L jump." } }
-              ],
-              quiz: {
-                question: { fr: "Le cavalier peut-il sauter une piece ?", de: "Kann der Springer uber eine Figur springen?", en: "Can the knight jump over a piece?" },
-                answers: [
-                  { text: { fr: "Oui", de: "Ja", en: "Yes" }, correct: true },
-                  { text: { fr: "Non", de: "Nein", en: "No" }, correct: false }
-                ]
-              },
-              exercise: { fen: "4k3/8/8/8/8/2N5/8/4K3 w - - 0 1", solution: ["Nd5"] }
-            }
-          },
-          {
-            slug: "fou",
-            title: { fr: "Le fou et les diagonales", de: "Der Laufer und Diagonalen", en: "The bishop and diagonals" },
-            objective: { fr: "Voir comment le fou attaque sur une diagonale longue.", de: "Sehen, wie der Laufer auf langen Diagonalen angreift.", en: "See how the bishop attacks along long diagonals." },
-            xpReward: 25,
-            content: {
-              startFen: "4k3/8/5p2/8/8/2B5/8/4K3 w - - 0 1",
-              summary: {
-                fr: "Le fou reste toujours sur la meme couleur et controle les diagonales.",
-                de: "Der Laufer bleibt immer auf derselben Farbe und kontrolliert Diagonalen.",
-                en: "The bishop stays on the same color and controls diagonals."
-              },
-              mistake: {
-                fr: "Erreur frequente : oublier qu'une piece placee sur la diagonale bloque le fou.",
-                de: "Haufiger Fehler: vergessen, dass eine Figur auf der Diagonale den Laufer blockiert.",
-                en: "Common mistake: forgetting that a piece on the diagonal blocks the bishop."
-              },
-              moves: [
-                { san: "Bxf6", from: "c3", to: "f6", note: { fr: "Le fou suit la diagonale c3-d4-e5-f6 et capture.", de: "Der Laufer folgt der Diagonale c3-d4-e5-f6 und schlagt.", en: "The bishop follows c3-d4-e5-f6 and captures." } }
-              ],
-              quiz: {
-                question: { fr: "Le fou change-t-il de couleur de case ?", de: "Wechselt der Laufer die Feldfarbe?", en: "Does the bishop change square color?" },
-                answers: [
-                  { text: { fr: "Non", de: "Nein", en: "No" }, correct: true },
-                  { text: { fr: "Oui", de: "Ja", en: "Yes" }, correct: false }
-                ]
-              },
-              exercise: { fen: "4k3/8/5p2/8/8/2B5/8/4K3 w - - 0 1", solution: ["Bxf6"] }
-            }
-          }
-        ]
-      }
+      makeModule("Bases du jeu", [
+        {
+          slug: "echiquier-pieces",
+          title: "L'echiquier et les forces en presence",
+          objective: "Identifier les cases, les coordonnees et le role de chaque piece.",
+          focus: "Avant de calculer, il faut savoir lire l'echiquier et nommer les forces.",
+          commonMistake: "Erreur frequente : regarder les pieces sans reperer les coordonnees et les lignes.",
+          pattern: "board",
+          xp: 20
+        },
+        {
+          slug: "mouvements-pieces",
+          title: "Trajets des pieces et captures",
+          objective: "Comparer les mouvements de la tour, du fou, du cavalier, de la dame et du roi.",
+          focus: "Chaque piece a une geometrie differente : ligne, diagonale, saut ou courte distance.",
+          commonMistake: "Erreur frequente : confondre deplacement et capture, surtout avec les pions.",
+          pattern: "knight",
+          xp: 25
+        },
+        {
+          slug: "regles-speciales",
+          title: "Roque, promotion et prise particuliere",
+          objective: "Comprendre les coups qui changent les regles habituelles de deplacement.",
+          focus: "Les coups speciaux sont rares mais essentiels pour jouer une vraie partie.",
+          commonMistake: "Erreur frequente : roquer alors que le roi traverse une case controlee.",
+          pattern: "castle",
+          xp: 30
+        },
+        {
+          slug: "vie-du-roi",
+          title: "Le roi attaque, fuit et se protege",
+          objective: "Apprendre ce qu'un roi peut faire, et quand il devient vulnerable.",
+          focus: "Le roi est une piece active, mais sa securite reste prioritaire.",
+          commonMistake: "Erreur frequente : avancer le roi trop tot sans calculer les echecs adverses.",
+          pattern: "blackDefense",
+          xp: 30
+        }
+      ]),
+      makeModule("Mats elementaires", [
+        {
+          slug: "mat-en-un-base",
+          title: "Trouver un mat immediat",
+          objective: "Lister les echecs et verifier que le roi n'a aucune defense.",
+          focus: "Un mat en un coup se trouve avec une methode : echecs, cases de fuite, captures, blocages.",
+          commonMistake: "Erreur frequente : annoncer mat sans verifier si une piece peut capturer l'attaquant.",
+          pattern: "queenMate",
+          xp: 35
+        },
+        {
+          slug: "mat-dame-roi",
+          title: "Dame et roi contre roi seul",
+          objective: "Comprendre comment la dame reduit l'espace du roi adverse.",
+          focus: "La dame controle beaucoup de cases, mais elle doit etre coordonnee avec le roi.",
+          commonMistake: "Erreur frequente : donner des echecs sans rapprocher son roi.",
+          pattern: "queenMate",
+          xp: 35
+        },
+        {
+          slug: "mat-tour-roi",
+          title: "Tour et roi : enfermer le roi",
+          objective: "Utiliser la tour pour couper une rangee ou une colonne.",
+          focus: "La tour gagne en finale quand elle limite le roi et l'oblige a reculer.",
+          commonMistake: "Erreur frequente : approcher la tour trop pres du roi adverse.",
+          pattern: "rookCheck",
+          xp: 35
+        },
+        {
+          slug: "mat-deux-fous",
+          title: "Deux fous et roi : couvrir les diagonales",
+          objective: "Voir comment deux fous peuvent controler les deux couleurs de cases.",
+          focus: "Les fous travaillent ensemble pour fermer les diagonales et pousser le roi.",
+          commonMistake: "Erreur frequente : separer les fous au lieu de les coordonner.",
+          pattern: "bishop",
+          xp: 35
+        },
+        {
+          slug: "schemas-mat",
+          title: "Modeles de mat a reconnaitre",
+          objective: "Memoriser des formes simples de mat et les retrouver en partie.",
+          focus: "Les schemas de mat reviennent souvent : roi bloque, piece lourde active, cases controlees.",
+          commonMistake: "Erreur frequente : chercher une capture alors qu'un echec force termine la partie.",
+          pattern: "queenMate",
+          xp: 40
+        }
+      ]),
+      makeModule("Premieres parties", [
+        {
+          slug: "premieres-ouvertures",
+          title: "Premiers choix d'ouverture",
+          objective: "Jouer des coups utiles des le debut : centre, developpement, roi.",
+          focus: "Une ouverture saine donne de l'espace aux pieces et evite les pertes de temps.",
+          commonMistake: "Erreur frequente : sortir la dame trop tot et perdre des tempos.",
+          pattern: "opening",
+          xp: 35
+        },
+        {
+          slug: "premier-milieu",
+          title: "Entrer dans le milieu de partie",
+          objective: "Transformer le developpement en plan simple.",
+          focus: "Le milieu de partie commence quand les pieces sont sorties et cherchent des cibles.",
+          commonMistake: "Erreur frequente : attaquer sans regarder les pieces non protegees.",
+          pattern: "center",
+          xp: 35
+        },
+        {
+          slug: "fin-partie-resultats",
+          title: "Victoire, nulle ou defaite",
+          objective: "Comprendre les facons legales de terminer une partie.",
+          focus: "Une partie peut finir par mat, abandon, pat, repetition, manque de materiel ou temps.",
+          commonMistake: "Erreur frequente : confondre pat et mat.",
+          pattern: "blackDefense",
+          xp: 30
+        },
+        {
+          slug: "test-final-debutant",
+          title: "Bilan du premier niveau",
+          objective: "Revoir les idees essentielles avant de passer a la tactique.",
+          focus: "Ce bilan rassemble pieces, roi, mats simples, ouverture et fin de partie.",
+          commonMistake: "Erreur frequente : jouer vite sans appliquer la checklist des coups legaux.",
+          pattern: "queenMate",
+          xp: 50
+        }
+      ])
     ]
   },
   {
-    slug: "strategie-base",
+    slug: "niveau-strategie-tactique",
     level: 2,
-    title: { fr: "Strategie de base", de: "Grundstrategie", en: "Basic strategy" },
-    description: { fr: "Centre, developpement, roque et plans simples pour sortir de l'ouverture.", de: "Zentrum, Entwicklung, Rochade und einfache Plane.", en: "Center, development, castling and simple opening plans." },
+    title: tr("Niveau 2 - Plans, tactiques et structures"),
+    description: tr("Un niveau pour apprendre a construire une position, reconnaitre les motifs tactiques et comprendre les familles d'ouvertures."),
     modules: [
-      {
-        title: { fr: "Bien commencer la partie", de: "Gut eroffnen", en: "Start the game well" },
-        lessons: [
-          {
-            slug: "centre-developpement",
-            title: { fr: "Occuper le centre et developper", de: "Zentrum besetzen und entwickeln", en: "Occupy the center and develop" },
-            objective: { fr: "Jouer des coups qui controlent le centre tout en sortant les pieces.", de: "Zuge finden, die Zentrum und Entwicklung verbinden.", en: "Play moves that control the center while developing pieces." },
-            xpReward: 40,
-            content: {
-              startFen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-              summary: {
-                fr: "Les bons debuts de partie gagnent du temps : un pion central, puis les cavaliers et les fous vers des cases actives.",
-                de: "Gute Eroffnungen gewinnen Zeit: Zentralbauer, dann Springer und Laufer aktiv entwickeln.",
-                en: "Good openings gain time: a central pawn, then knights and bishops to active squares."
-              },
-              mistake: {
-                fr: "Erreur frequente : bouger trop vite la dame et laisser les pieces mineures dormir.",
-                de: "Haufiger Fehler: die Dame zu fruh ziehen und Leichtfiguren stehen lassen.",
-                en: "Common mistake: moving the queen too early while minor pieces stay home."
-              },
-              moves: [
-                { san: "e4", from: "e2", to: "e4", note: { fr: "Le pion e controle d5 et f5, et libere le fou.", de: "Der e-Bauer kontrolliert d5 und f5 und offnet den Laufer.", en: "The e-pawn controls d5 and f5 and opens the bishop." } },
-                { san: "e5", from: "e7", to: "e5", note: { fr: "Les Noirs repondent aussi au centre.", de: "Schwarz antwortet ebenfalls im Zentrum.", en: "Black also answers in the center." } },
-                { san: "Nf3", from: "g1", to: "f3", note: { fr: "Le cavalier attaque e5 et se rapproche du roque.", de: "Der Springer greift e5 an und bereitet die Rochade vor.", en: "The knight attacks e5 and helps prepare castling." } }
-              ],
-              quiz: {
-                question: { fr: "Quel principe est prioritaire dans l'ouverture ?", de: "Welches Prinzip ist in der Eroffnung wichtig?", en: "Which opening principle matters most?" },
-                answers: [
-                  { text: { fr: "Developper les pieces vers le centre", de: "Figuren zum Zentrum entwickeln", en: "Develop pieces toward the center" }, correct: true },
-                  { text: { fr: "Sortir la dame a chaque coup", de: "Die Dame in jedem Zug ziehen", en: "Move the queen every turn" }, correct: false }
-                ]
-              },
-              exercise: { fen: "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1", solution: ["e5"] }
-            }
-          },
-          {
-            slug: "roquer",
-            title: { fr: "Roquer pour mettre le roi en securite", de: "Rochieren fur Konigssicherheit", en: "Castle to keep the king safe" },
-            objective: { fr: "Reconnaitre le moment ou le petit roque devient possible.", de: "Erkennen, wann die kurze Rochade moglich ist.", en: "Recognize when kingside castling is possible." },
-            xpReward: 45,
-            content: {
-              startFen: "r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4",
-              summary: {
-                fr: "Apres avoir sorti le cavalier et le fou, le roi peut souvent roquer pour quitter le centre.",
-                de: "Nach Springer- und Lauferentwicklung kann der Konig oft rochieren.",
-                en: "After developing the knight and bishop, the king can often castle away from the center."
-              },
-              mistake: {
-                fr: "Erreur frequente : laisser le roi au centre alors que les lignes vont s'ouvrir.",
-                de: "Haufiger Fehler: den Konig im Zentrum lassen, wenn Linien geoffnet werden.",
-                en: "Common mistake: leaving the king in the center as lines open."
-              },
-              moves: [
-                { san: "O-O", from: "e1", to: "g1", note: { fr: "Le roi va en g1 et la tour vient en f1 en un seul coup.", de: "Der Konig geht nach g1 und der Turm nach f1.", en: "The king goes to g1 and the rook moves to f1 in one move." } }
-              ],
-              quiz: {
-                question: { fr: "Pourquoi roquer tot est-il utile ?", de: "Warum ist fruhe Rochade nutzlich?", en: "Why is early castling useful?" },
-                answers: [
-                  { text: { fr: "Pour proteger le roi et connecter les tours", de: "Um den Konig zu sichern und Turme zu verbinden", en: "To protect the king and connect rooks" }, correct: true },
-                  { text: { fr: "Pour gagner une dame immediatement", de: "Um sofort eine Dame zu gewinnen", en: "To win a queen immediately" }, correct: false }
-                ]
-              },
-              exercise: { fen: "r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4", solution: ["O-O"] }
-            }
-          },
-          {
-            slug: "rupture-centre",
-            title: { fr: "Ouvrir le centre au bon moment", de: "Das Zentrum im richtigen Moment offnen", en: "Open the center at the right moment" },
-            objective: { fr: "Utiliser un pion central pour contester l'espace adverse.", de: "Mit einem Zentralbauern gegnerischen Raum angreifen.", en: "Use a central pawn to challenge enemy space." },
-            xpReward: 45,
-            content: {
-              startFen: "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
-              summary: {
-                fr: "Quand les pieces sont pretes, pousser un pion central peut ouvrir les lignes pour attaquer.",
-                de: "Wenn die Figuren bereit sind, kann ein Zentralbauer Linien offnen.",
-                en: "When pieces are ready, a central pawn push can open lines."
-              },
-              mistake: {
-                fr: "Erreur frequente : ouvrir le centre sans avoir developpe ses pieces.",
-                de: "Haufiger Fehler: das Zentrum offnen, bevor die Figuren entwickelt sind.",
-                en: "Common mistake: opening the center before developing pieces."
-              },
-              moves: [
-                { san: "d4", from: "d2", to: "d4", note: { fr: "Le pion d attaque e5 et ouvre des lignes pour les pieces blanches.", de: "Der d-Bauer greift e5 an und offnet Linien.", en: "The d-pawn attacks e5 and opens lines." } }
-              ],
-              quiz: {
-                question: { fr: "Quel est le but de d4 ici ?", de: "Was ist das Ziel von d4?", en: "What is the goal of d4 here?" },
-                answers: [
-                  { text: { fr: "Contester le centre", de: "Das Zentrum angreifen", en: "Challenge the center" }, correct: true },
-                  { text: { fr: "Cacher le roi", de: "Den Konig verstecken", en: "Hide the king" }, correct: false }
-                ]
-              },
-              exercise: { fen: "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3", solution: ["d4"] }
-            }
-          }
-        ]
-      }
+      makeModule("Combinaisons et motifs", [
+        {
+          slug: "bases-combinaisons",
+          title: "Assembler une combinaison",
+          objective: "Relier echecs, captures et menaces dans une suite forcee.",
+          focus: "Une combinaison commence par les coups forcing et se termine par un gain concret.",
+          commonMistake: "Erreur frequente : calculer seulement son idee sans chercher la meilleure defense adverse.",
+          pattern: "fork",
+          xp: 45
+        },
+        {
+          slug: "sacrifice-calcul",
+          title: "Donner du materiel pour gagner plus",
+          objective: "Evaluer quand un sacrifice est justifie par une attaque ou un gain force.",
+          focus: "Un sacrifice n'est pas un cadeau : il doit ouvrir une ligne, attirer le roi ou gagner du temps.",
+          commonMistake: "Erreur frequente : sacrifier pour faire joli sans variante concrete.",
+          pattern: "discovery",
+          xp: 45
+        },
+        {
+          slug: "deviation-defenseur",
+          title: "Detourner une piece cle",
+          objective: "Forcer une piece adverse a abandonner sa mission defensive.",
+          focus: "La deviation retire le defenseur d'une case, d'une ligne ou d'une piece importante.",
+          commonMistake: "Erreur frequente : capturer le defenseur avant d'identifier ce qu'il protege.",
+          pattern: "defender",
+          xp: 45
+        },
+        {
+          slug: "attraction-roi",
+          title: "Attirer une cible sur la mauvaise case",
+          objective: "Comprendre comment une piece adverse peut etre forcee vers une case vulnerable.",
+          focus: "L'attraction oblige une cible a se placer la ou la tactique fonctionne.",
+          commonMistake: "Erreur frequente : attirer une piece sans avoir le coup suivant.",
+          pattern: "queenMate",
+          xp: 45
+        },
+        {
+          slug: "clouage-pression",
+          title: "Exploiter une piece clouee",
+          objective: "Transformer un clouage en pression durable ou en gain de materiel.",
+          focus: "Une piece clouee devient une cible si on ajoute des attaquants.",
+          commonMistake: "Erreur frequente : relacher le clouage trop vite.",
+          pattern: "pin",
+          xp: 45
+        },
+        {
+          slug: "combinaisons-frequentes-1",
+          title: "Motifs tactiques recurrents I",
+          objective: "Reconnaitre les fourchettes, clouages et attaques doubles.",
+          focus: "Les tactiques reviennent sous des formes proches : il faut apprendre a les nommer.",
+          commonMistake: "Erreur frequente : regarder seulement les coups de dame.",
+          pattern: "fork",
+          xp: 45
+        },
+        {
+          slug: "combinaisons-frequentes-2",
+          title: "Motifs tactiques recurrents II",
+          objective: "Approfondir les enfilades, decouvertes et eliminations de defense.",
+          focus: "Plusieurs motifs peuvent se combiner dans une meme variante.",
+          commonMistake: "Erreur frequente : s'arreter au premier bon coup au lieu de chercher le plus fort.",
+          pattern: "rookCheck",
+          xp: 45
+        }
+      ]),
+      makeModule("Plans de milieu de partie", [
+        {
+          slug: "developpement-actif",
+          title: "Developper avec une idee",
+          objective: "Amener les pieces vers des cases utiles, pas seulement les sortir.",
+          focus: "Un bon developpement prepare le centre, le roque et les futures menaces.",
+          commonMistake: "Erreur frequente : developper une piece vers une case passive.",
+          pattern: "opening",
+          xp: 40
+        },
+        {
+          slug: "roi-en-securite",
+          title: "Proteger son roi avant l'attaque",
+          objective: "Evaluer le roque, les pions du roi et les lignes ouvertes.",
+          focus: "Une attaque echoue souvent si son propre roi est plus expose.",
+          commonMistake: "Erreur frequente : ouvrir des lignes devant son roi sans compensation.",
+          pattern: "castle",
+          xp: 40
+        },
+        {
+          slug: "centre-actif",
+          title: "Occuper et contester le centre",
+          objective: "Choisir entre tenir, echanger ou pousser les pions centraux.",
+          focus: "Le centre decide la mobilite des pieces et le cote ou attaquer.",
+          commonMistake: "Erreur frequente : laisser l'adversaire installer ses pions sans reaction.",
+          pattern: "center",
+          xp: 40
+        },
+        {
+          slug: "activite-pieces",
+          title: "Activer les pieces dormantes",
+          objective: "Comparer une piece active et une piece seulement developpee.",
+          focus: "Une piece active attaque, defend ou controle des cases importantes.",
+          commonMistake: "Erreur frequente : garder une tour ou un fou sans perspective.",
+          pattern: "bishop",
+          xp: 40
+        },
+        {
+          slug: "structures-pions",
+          title: "Lire une structure de pions",
+          objective: "Comprendre les chaines, pions isoles, pions doubles et cases faibles.",
+          focus: "La structure de pions indique les plans durables de la position.",
+          commonMistake: "Erreur frequente : pousser les pions sans voir les cases faibles creees.",
+          pattern: "center",
+          xp: 40
+        }
+      ]),
+      makeModule("Familles d'ouvertures", [
+        {
+          slug: "positions-ouvertes",
+          title: "Positions ouvertes : lignes et initiative",
+          objective: "Comprendre pourquoi les pieces rapides dominent quand le centre s'ouvre.",
+          focus: "Les positions ouvertes favorisent developpement rapide, roque et tactiques.",
+          commonMistake: "Erreur frequente : laisser son roi au centre dans une position ouverte.",
+          pattern: "opening",
+          xp: 40
+        },
+        {
+          slug: "positions-fermees",
+          title: "Positions fermees : manoeuvres et patience",
+          objective: "Apprendre a ameliorer les pieces quand les lignes sont bloquees.",
+          focus: "Dans une position fermee, on prepare les ruptures et les bonnes cases.",
+          commonMistake: "Erreur frequente : ouvrir le jeu du mauvais cote.",
+          pattern: "knight",
+          xp: 40
+        },
+        {
+          slug: "positions-semi-ouvertes",
+          title: "Positions semi-ouvertes : desequilibres",
+          objective: "Comprendre les positions ou un camp possede une colonne ou un pion different.",
+          focus: "Les structures semi-ouvertes demandent de jouer contre les faiblesses.",
+          commonMistake: "Erreur frequente : echanger les pieces actives qui attaquent la faiblesse.",
+          pattern: "rookCheck",
+          xp: 40
+        },
+        {
+          slug: "gambits-principes",
+          title: "Gambits : temps contre materiel",
+          objective: "Savoir quand accepter ou refuser un pion offert.",
+          focus: "Un gambit donne du materiel pour accelerer le developpement ou ouvrir des lignes.",
+          commonMistake: "Erreur frequente : prendre tout le materiel sans finir son developpement.",
+          pattern: "discovery",
+          xp: 45
+        }
+      ])
     ]
   },
   {
-    slug: "tactique-guidee",
+    slug: "niveau-finales-maitres",
     level: 3,
-    title: { fr: "Tactiques guidees", de: "Gefuhrte Taktik", en: "Guided tactics" },
-    description: { fr: "Echecs, captures, menaces, fourchettes et mats courts avec indices progressifs.", de: "Schachs, Schlagzuge, Drohungen, Gabeln und kurze Matts.", en: "Checks, captures, threats, forks and short mates with progressive hints." },
+    title: tr("Niveau 3 - Finales et inspirations de maitres"),
+    description: tr("Un niveau avance pour convertir les avantages, etudier les finales essentielles et s'inspirer de parties modeles."),
     modules: [
-      {
-        title: { fr: "Coups forcants", de: "Forcierende Zuge", en: "Forcing moves" },
-        lessons: [
-          {
-            slug: "fourchette-cavalier",
-            title: { fr: "La fourchette du cavalier", de: "Die Springergabel", en: "The knight fork" },
-            objective: { fr: "Reperer un coup de cavalier qui attaque deux cibles.", de: "Einen Springerzug finden, der zwei Ziele angreift.", en: "Find a knight move that attacks two targets." },
-            xpReward: 50,
-            content: {
-              startFen: "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
-              summary: {
-                fr: "Le cavalier est dangereux parce qu'il saute et peut attaquer roi, dame ou pieces non protegees en meme temps.",
-                de: "Der Springer ist gefahrlich, weil er springt und mehrere Ziele zugleich angreifen kann.",
-                en: "The knight is dangerous because it jumps and can attack several targets at once."
-              },
-              mistake: {
-                fr: "Erreur frequente : ne regarder que les captures de la dame et oublier les sauts du cavalier.",
-                de: "Haufiger Fehler: nur Damenzuge sehen und Springersprunge vergessen.",
-                en: "Common mistake: only checking queen captures and missing knight jumps."
-              },
-              moves: [
-                { san: "Nxe5", from: "f3", to: "e5", note: { fr: "Le cavalier capture au centre et cree des menaces tactiques.", de: "Der Springer schlagt im Zentrum und erzeugt taktische Drohungen.", en: "The knight captures in the center and creates tactical threats." } }
-              ],
-              quiz: {
-                question: { fr: "Pourquoi le cavalier surprend-il souvent ?", de: "Warum uberrascht der Springer oft?", en: "Why does the knight often surprise?" },
-                answers: [
-                  { text: { fr: "Il saute par-dessus les pieces", de: "Er springt uber Figuren", en: "It jumps over pieces" }, correct: true },
-                  { text: { fr: "Il se deplace comme une tour", de: "Er zieht wie ein Turm", en: "It moves like a rook" }, correct: false }
-                ]
-              },
-              exercise: { fen: "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3", solution: ["Nxe5"] }
-            }
-          },
-          {
-            slug: "clouage",
-            title: { fr: "Le clouage du cavalier", de: "Die Fesselung des Springers", en: "Pinning the knight" },
-            objective: { fr: "Utiliser un fou pour immobiliser une piece devant le roi.", de: "Mit dem Laufer eine Figur vor dem Konig fesseln.", en: "Use a bishop to pin a piece in front of the king." },
-            xpReward: 50,
-            content: {
-              startFen: "rnbqk2r/ppppbppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQK2R w KQkq - 4 4",
-              summary: {
-                fr: "Une piece clouee ne peut pas bouger sans exposer une piece plus importante.",
-                de: "Eine gefesselte Figur kann nicht ziehen, ohne etwas Wichtigeres aufzudecken.",
-                en: "A pinned piece cannot move without exposing something more valuable."
-              },
-              mistake: {
-                fr: "Erreur frequente : capturer vite au lieu d'augmenter la pression sur la piece clouee.",
-                de: "Haufiger Fehler: zu schnell schlagen statt den Druck zu erhohen.",
-                en: "Common mistake: capturing too soon instead of increasing pressure."
-              },
-              moves: [
-                { san: "Bb5", from: "e2", to: "b5", note: { fr: "Le fou vise le cavalier f6 indirectement par la pression sur le roi.", de: "Der Laufer erzeugt Druck entlang der Diagonale.", en: "The bishop creates pressure along the diagonal." } }
-              ],
-              quiz: {
-                question: { fr: "Qu'est-ce qu'un clouage ?", de: "Was ist eine Fesselung?", en: "What is a pin?" },
-                answers: [
-                  { text: { fr: "Une piece ne peut pas bouger sans exposer une cible", de: "Eine Figur kann nicht ziehen, ohne ein Ziel aufzudecken", en: "A piece cannot move without exposing a target" }, correct: true },
-                  { text: { fr: "Un pion qui va en promotion", de: "Ein Bauer, der umwandelt", en: "A pawn that promotes" }, correct: false }
-                ]
-              },
-              exercise: { fen: "rnbqk2r/ppppbppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQK2R w KQkq - 4 4", solution: ["Bb5"] }
-            }
-          },
-          {
-            slug: "mat-en-un",
-            title: { fr: "Forcer le mat en un coup", de: "Matt in einem Zug erzwingen", en: "Force mate in one" },
-            objective: { fr: "Chercher d'abord les echecs quand le roi adverse manque de cases.", de: "Zuerst Schachs suchen, wenn der Konig keine Felder hat.", en: "Look for checks first when the enemy king has no squares." },
-            xpReward: 55,
-            content: {
-              startFen: "6k1/6pp/8/7Q/8/8/5PPP/6K1 w - - 0 1",
-              summary: {
-                fr: "Un mat court se trouve souvent en listant les echecs puis en verifiant les cases de fuite.",
-                de: "Kurze Matts findet man oft, indem man zuerst alle Schachs pruft.",
-                en: "Short mates are often found by listing checks and checking escape squares."
-              },
-              mistake: {
-                fr: "Erreur frequente : regarder les captures avant les echecs decisifs.",
-                de: "Haufiger Fehler: Schlagzuge vor entscheidenden Schachs betrachten.",
-                en: "Common mistake: checking captures before decisive checks."
-              },
-              moves: [
-                { san: "Qe8#", from: "h5", to: "e8", note: { fr: "La dame donne echec et le roi noir n'a plus de defense.", de: "Die Dame gibt Schach und Schwarz hat keine Verteidigung.", en: "The queen gives check and Black has no defense." } }
-              ],
-              quiz: {
-                question: { fr: "Quel type de coup faut-il verifier en premier ?", de: "Welche Zuge pruft man zuerst?", en: "Which moves should you check first?" },
-                answers: [
-                  { text: { fr: "Les echecs", de: "Schachs", en: "Checks" }, correct: true },
-                  { text: { fr: "Les coups de bord", de: "Randzuge", en: "Edge moves" }, correct: false }
-                ]
-              },
-              exercise: { fen: "6k1/6pp/8/7Q/8/8/5PPP/6K1 w - - 0 1", solution: ["Qe8#"] }
-            }
-          }
-        ]
-      }
+      makeModule("Finales essentielles", [
+        {
+          slug: "initiation-finales",
+          title: "Entrer en finale avec un plan",
+          objective: "Identifier l'activite du roi, les pions passes et les pieces restantes.",
+          focus: "La finale transforme les petits avantages en resultats concrets.",
+          commonMistake: "Erreur frequente : garder son roi passif.",
+          pattern: "pawnEndgame",
+          xp: 45
+        },
+        {
+          slug: "finales-pions-1",
+          title: "Finales de pions : opposition",
+          objective: "Comprendre comment les rois se contestent les cases cle.",
+          focus: "L'opposition permet de gagner un tempo ou de bloquer le roi adverse.",
+          commonMistake: "Erreur frequente : pousser le pion avant de placer le roi.",
+          pattern: "pawnEndgame",
+          xp: 45
+        },
+        {
+          slug: "finales-pions-2",
+          title: "Finales de pions : promotion",
+          objective: "Calculer les courses de pions et les carres de promotion.",
+          focus: "Un pion passe devient dangereux si son roi l'accompagne.",
+          commonMistake: "Erreur frequente : oublier le carre du pion.",
+          pattern: "pawnEndgame",
+          xp: 45
+        },
+        {
+          slug: "finales-tours",
+          title: "Finales de tours : activite d'abord",
+          objective: "Placer la tour derriere les pions et activer le roi.",
+          focus: "Les finales de tours recompensent les pieces actives et les echecs lateraux.",
+          commonMistake: "Erreur frequente : defendre passivement un pion faible.",
+          pattern: "rookCheck",
+          xp: 45
+        },
+        {
+          slug: "finales-cavaliers",
+          title: "Finales de cavaliers : cases fortes",
+          objective: "Chercher les avant-postes et les fourchettes possibles.",
+          focus: "Le cavalier est puissant quand il trouve une case stable pres des pions.",
+          commonMistake: "Erreur frequente : placer le cavalier au bord sans cible.",
+          pattern: "knight",
+          xp: 45
+        },
+        {
+          slug: "finales-fous",
+          title: "Finales de fous : couleur et diagonales",
+          objective: "Comprendre les bons et mauvais fous selon les pions.",
+          focus: "Un fou actif attaque les deux ailes si les diagonales restent ouvertes.",
+          commonMistake: "Erreur frequente : enfermer son fou derriere ses propres pions.",
+          pattern: "bishop",
+          xp: 45
+        },
+        {
+          slug: "finales-dames",
+          title: "Finales de dames : echecs et roi expose",
+          objective: "Gerer les echecs perpetuels, la securite du roi et les pions passes.",
+          focus: "Les finales de dames demandent precision et vigilance contre les echecs continus.",
+          commonMistake: "Erreur frequente : pousser un pion en laissant un perpetuel.",
+          pattern: "queenMate",
+          xp: 45
+        }
+      ]),
+      makeModule("Lecons inspirees de grands maitres", [
+        {
+          slug: "modele-mat-sept-coups",
+          title: "Miniature brillante : attaque rapide",
+          objective: "Voir comment une erreur de developpement peut mener a une attaque decisive.",
+          focus: "Les parties courtes montrent l'importance de la securite du roi.",
+          commonMistake: "Erreur frequente : ignorer une menace parce que la partie vient de commencer.",
+          pattern: "queenMate",
+          xp: 50
+        },
+        {
+          slug: "modele-serie-sacrifices",
+          title: "Suite de sacrifices calcules",
+          objective: "Distinguer sacrifice intuitif et sacrifice calcule.",
+          focus: "Un sacrifice fort force des reponses et garde l'initiative.",
+          commonMistake: "Erreur frequente : sacrifier sans verifier la derniere defense.",
+          pattern: "discovery",
+          xp: 50
+        },
+        {
+          slug: "modele-tactique-finale",
+          title: "Ressource tactique en finale",
+          objective: "Trouver une tactique meme quand il reste peu de materiel.",
+          focus: "Les finales contiennent aussi fourchettes, clouages et echecs intermediaires.",
+          commonMistake: "Erreur frequente : croire que la tactique disparait en finale.",
+          pattern: "fork",
+          xp: 50
+        },
+        {
+          slug: "modele-artillerie-lourde",
+          title: "Tours et dame en batterie",
+          objective: "Coordonner les pieces lourdes sur une colonne ou une rangee.",
+          focus: "Les pieces lourdes deviennent redoutables quand elles attaquent la meme cible.",
+          commonMistake: "Erreur frequente : aligner les pieces sans point d'attaque.",
+          pattern: "rookCheck",
+          xp: 50
+        },
+        {
+          slug: "modele-pression-fil",
+          title: "Tenir la tension sur une ligne",
+          objective: "Maintenir une menace sans precipiter l'echange.",
+          focus: "Parfois le meilleur coup garde la pression au lieu de capturer.",
+          commonMistake: "Erreur frequente : echanger et supprimer sa propre initiative.",
+          pattern: "pin",
+          xp: 50
+        },
+        {
+          slug: "modele-contre-attaque",
+          title: "Repondre a l'attaque par l'initiative",
+          objective: "Chercher un coup actif quand l'adversaire menace.",
+          focus: "Une contre-attaque reussie cree une menace plus forte que celle subie.",
+          commonMistake: "Erreur frequente : defendre passivement alors qu'un coup forcing existe.",
+          pattern: "defender",
+          xp: 50
+        },
+        {
+          slug: "modele-mat-rapide-celebre",
+          title: "Partie celebre, conclusion rapide",
+          objective: "Comprendre comment le developpement decide une miniature.",
+          focus: "Les miniatures punissent les retards de developpement et les faiblesses du roi.",
+          commonMistake: "Erreur frequente : prendre du materiel pendant que le roi reste expose.",
+          pattern: "queenMate",
+          xp: 50
+        },
+        {
+          slug: "modele-appat",
+          title: "L'appat qui detourne la defense",
+          objective: "Utiliser une menace apparente pour forcer une piece sur une mauvaise case.",
+          focus: "Un appat tactique attire la reponse adverse vers la variante voulue.",
+          commonMistake: "Erreur frequente : jouer l'appat sans calculer l'acceptation.",
+          pattern: "defender",
+          xp: 50
+        },
+        {
+          slug: "modele-cavaliers-assaut",
+          title: "Cavaliers au coeur de l'attaque",
+          objective: "Placer les cavaliers sur des cases avancees pour attaquer le roi.",
+          focus: "Les cavaliers deviennent terribles pres du roi adverse.",
+          commonMistake: "Erreur frequente : echanger le cavalier actif contre une piece passive.",
+          pattern: "fork",
+          xp: 50
+        },
+        {
+          slug: "modele-gambit-secret",
+          title: "Idees cachees dans un gambit",
+          objective: "Analyser le lien entre pion offert, developpement et initiative.",
+          focus: "Un bon gambit donne des lignes, du temps et des cibles.",
+          commonMistake: "Erreur frequente : jouer un gambit sans connaitre les plans.",
+          pattern: "opening",
+          xp: 50
+        }
+      ])
     ]
   }
 ];
@@ -370,11 +670,7 @@ export const exercises = [
   fen: String(fen),
   sideToMove: String(sideToMove),
   solution: solution as string[],
-  explanation: {
-    fr: `Le motif "${theme}" fonctionne ici parce que le coup force ameliore la position immediatement.`,
-    de: `Das Motiv "${theme}" funktioniert, weil der Zug sofort zwingt.`,
-    en: `The "${theme}" motif works because the forcing move improves the position immediately.`
-  }
+  explanation: tr(`Le motif "${theme}" fonctionne ici parce que le coup force ameliore la position immediatement.`)
 }));
 
 export const badges = [
@@ -386,6 +682,6 @@ export const badges = [
 ].map(([code, title, description], i) => ({
   code,
   xp: [25, 60, 80, 30, 45][i],
-  title: { fr: title, de: title, en: title },
-  description: { fr: description, de: description, en: description }
+  title: tr(title),
+  description: tr(description)
 }));
