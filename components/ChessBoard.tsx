@@ -8,12 +8,14 @@ export function ChessBoard({
   fen,
   onMove,
   orientation = "white",
-  arrows = []
+  arrows = [],
+  disabled = false
 }: {
   fen: string;
   onMove?: (from: string, to: string, san: string, fen: string) => void;
   orientation?: "white" | "black";
   arrows?: [string, string, string?][];
+  disabled?: boolean;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [localFen, setLocalFen] = useState(fen);
@@ -34,6 +36,7 @@ export function ChessBoard({
   }, [displayFen, selected]);
 
   function move(from: string, to: string) {
+    if (disabled) return false;
     const chess = new Chess(displayFen);
     const result = chess.move({ from, to, promotion: "q" });
     if (!result) return false;
@@ -47,11 +50,12 @@ export function ChessBoard({
     <Chessboard
       position={displayFen}
       boardOrientation={orientation}
-      arePiecesDraggable
+      arePiecesDraggable={!disabled}
       customArrows={arrows as never}
       customSquareStyles={legalSquares}
       onPieceDrop={(from, to) => move(from, to)}
       onSquareClick={(square) => {
+        if (disabled) return;
         const chess = new Chess(displayFen);
         const piece = chess.get(square as never);
         const isOwnPiece = piece?.color === chess.turn();

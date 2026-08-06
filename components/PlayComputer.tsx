@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Chess } from "chess.js";
 import { ChessBoard } from "@/components/ChessBoard";
 import { chooseComputerMove, coachHints } from "@/lib/chess";
@@ -17,6 +17,8 @@ export function PlayComputer() {
   const [lessonGoal, setLessonGoal] = useState("roque");
   const [scheduled, setScheduled] = useState("Partie libre prete a demarrer");
   const [history, setHistory] = useState<string[]>([]);
+  const [thinking, setThinking] = useState(false);
+  const replyTimer = useRef<number | null>(null);
 
   const assistanceCopy = {
     light: "Assistance legere : avertissement avant les grosses erreurs, sans donner directement le meilleur coup.",
@@ -29,26 +31,57 @@ export function PlayComputer() {
     setHistory(next.history());
   }
 
+  function clearReplyTimer() {
+    if (replyTimer.current) window.clearTimeout(replyTimer.current);
+    replyTimer.current = null;
+  }
+
+  function queueComputerReply(fen: string, playedSan?: string) {
+    const position = new Chess(fen);
+    if (position.isGameOver()) {
+      setThinking(false);
+      return;
+    }
+
+    clearReplyTimer();
+    setThinking(true);
+    setMessage(training ? "L'ordinateur reflechit. Les conseils restent actifs apres sa reponse." : "L'ordinateur reflechit.");
+    replyTimer.current = window.setTimeout(() => {
+      const next = new Chess(fen);
+      const computer = chooseComputerMove(next.fen(), difficulty);
+      if (computer) next.move(computer.san);
+      update(next);
+      setThinking(false);
+      const hint = coachHints(next.fen());
+      setMessage(
+        training
+          ? assist === "light"
+            ? hint.light
+            : assist === "guided"
+              ? hint.guided
+              : `${hint.guided} Candidats : ${hint.candidates.join(", ")}`
+          : playedSan
+            ? `Vous avez joue ${playedSan}. Mode normal : pas d'assistance pendant la partie.`
+            : "Mode normal : pas d'assistance pendant la partie."
+      );
+    }, 80);
+  }
+
   function organizeGame() {
     const side = orientation === "white" ? "Blancs" : "Noirs";
     const mode = training ? `entrainement ${assist}` : "normal sans conseils";
     const next = new Chess();
-    if (orientation === "black") {
-      const computer = chooseComputerMove(next.fen(), difficulty);
-      if (computer) next.move(computer.san);
-    }
+    clearReplyTimer();
     setScheduled(`Partie organisee : ${side}, ${difficulty}, ${timeControl}, objectif "${lessonGoal}", mode ${mode}.`);
     setMessage(training ? assistanceCopy[assist] : "Mode normal : aucune aide en direct pendant la partie.");
     update(next);
+    setThinking(false);
+    if (orientation === "black") queueComputerReply(next.fen());
   }
 
   function onMove(_from: string, _to: string, san: string, fen: string) {
-    const next = new Chess(fen);
-    const computer = chooseComputerMove(next.fen(), difficulty);
-    if (computer) next.move(computer.san);
-    update(next);
-    const hint = coachHints(next.fen());
-    setMessage(training ? (assist === "light" ? hint.light : assist === "guided" ? hint.guided : `${hint.guided} Candidats : ${hint.candidates.join(", ")}`) : `Vous avez joue ${san}. Mode normal : pas d'assistance pendant la partie.`);
+    update(new Chess(fen));
+    queueComputerReply(fen, san);
   }
 
   async function save() {
@@ -77,7 +110,9 @@ export function PlayComputer() {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[1fr_410px]">
-        <div className="mx-auto w-full max-w-[660px]"><ChessBoard fen={chess.fen()} onMove={onMove} orientation={orientation} /></div>
+        <div className="mx-auto w-full max-w-[660px]">
+          <ChessBoard fen={chess.fen()} onMove={onMove} orientation={orientation} disabled={thinking} />
+        </div>
         <aside className="grid content-start gap-4 rounded border border-black/10 p-5 dark:border-white/10">
           <h2 className="flex items-center gap-2 text-2xl font-semibold"><Users size={22} /> Configurer la partie</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
@@ -103,11 +138,11 @@ export function PlayComputer() {
           </fieldset>
 
           <button className="flex items-center justify-center gap-2 rounded bg-ink px-4 py-3 text-white dark:bg-coral" onClick={organizeGame}><Sparkles size={18} /> Organiser cette partie</button>
-          <p className="rounded bg-coral/10 p-3 text-sm">{message}</p>
+          <p className="rounded bg-coral/10 p-3 text-sm">{thinking ? "L'ordinateur calcule son coup..." : message}</p>
           <div className="max-h-40 overflow-auto rounded border p-3 text-sm dark:border-white/10">{history.length ? history.join(" ") : "Historique des coups"}</div>
           <textarea readOnly value={chess.pgn()} aria-label="PGN" className="min-h-24 rounded border p-3 text-sm text-ink" />
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-            <button className="flex items-center justify-center gap-2 rounded border px-4 py-2" onClick={() => update(new Chess())}><Clock size={17} /> Nouvelle partie</button>
+            <button className="flex items-center justify-center gap-2 rounded border px-4 py-2" onClick={() => { clearReplyTimer(); setThinking(false); update(new Chess()); }}><Clock size={17} /> Nouvelle partie</button>
             <button className="rounded bg-coral px-4 py-3 text-white" onClick={save}>Sauvegarder et analyser</button>
           </div>
         </aside>

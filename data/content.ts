@@ -81,6 +81,94 @@ export const courses = [
         ]
       }
     ]
+  },
+  {
+    slug: "strategie-base",
+    level: 2,
+    title: { fr: "Strategie de base", de: "Grundstrategie", en: "Basic strategy" },
+    description: { fr: "Centre, developpement, roque et plans simples pour sortir de l'ouverture.", de: "Zentrum, Entwicklung, Rochade und einfache Plane.", en: "Center, development, castling and simple opening plans." },
+    modules: [
+      {
+        title: { fr: "Bien commencer la partie", de: "Gut eroffnen", en: "Start the game well" },
+        lessons: [
+          {
+            slug: "centre-developpement",
+            title: { fr: "Occuper le centre et developper", de: "Zentrum besetzen und entwickeln", en: "Occupy the center and develop" },
+            objective: { fr: "Jouer des coups qui controlent le centre tout en sortant les pieces.", de: "Zuge finden, die Zentrum und Entwicklung verbinden.", en: "Play moves that control the center while developing pieces." },
+            xpReward: 40,
+            content: {
+              startFen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+              summary: {
+                fr: "Les bons debuts de partie gagnent du temps : un pion central, puis les cavaliers et les fous vers des cases actives.",
+                de: "Gute Eroffnungen gewinnen Zeit: Zentralbauer, dann Springer und Laufer aktiv entwickeln.",
+                en: "Good openings gain time: a central pawn, then knights and bishops to active squares."
+              },
+              mistake: {
+                fr: "Erreur frequente : bouger trop vite la dame et laisser les pieces mineures dormir.",
+                de: "Haufiger Fehler: die Dame zu fruh ziehen und Leichtfiguren stehen lassen.",
+                en: "Common mistake: moving the queen too early while minor pieces stay home."
+              },
+              moves: [
+                { san: "e4", from: "e2", to: "e4", note: { fr: "Le pion e controle d5 et f5, et libere le fou.", de: "Der e-Bauer kontrolliert d5 und f5 und offnet den Laufer.", en: "The e-pawn controls d5 and f5 and opens the bishop." } },
+                { san: "e5", from: "e7", to: "e5", note: { fr: "Les Noirs repondent aussi au centre.", de: "Schwarz antwortet ebenfalls im Zentrum.", en: "Black also answers in the center." } },
+                { san: "Nf3", from: "g1", to: "f3", note: { fr: "Le cavalier attaque e5 et se rapproche du roque.", de: "Der Springer greift e5 an und bereitet die Rochade vor.", en: "The knight attacks e5 and helps prepare castling." } }
+              ],
+              quiz: {
+                question: { fr: "Quel principe est prioritaire dans l'ouverture ?", de: "Welches Prinzip ist in der Eroffnung wichtig?", en: "Which opening principle matters most?" },
+                answers: [
+                  { text: { fr: "Developper les pieces vers le centre", de: "Figuren zum Zentrum entwickeln", en: "Develop pieces toward the center" }, correct: true },
+                  { text: { fr: "Sortir la dame a chaque coup", de: "Die Dame in jedem Zug ziehen", en: "Move the queen every turn" }, correct: false }
+                ]
+              },
+              exercise: { fen: "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1", solution: ["e5"] }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    slug: "tactique-guidee",
+    level: 3,
+    title: { fr: "Tactiques guidees", de: "Gefuhrte Taktik", en: "Guided tactics" },
+    description: { fr: "Echecs, captures, menaces, fourchettes et mats courts avec indices progressifs.", de: "Schachs, Schlagzuge, Drohungen, Gabeln und kurze Matts.", en: "Checks, captures, threats, forks and short mates with progressive hints." },
+    modules: [
+      {
+        title: { fr: "Coups forcants", de: "Forcierende Zuge", en: "Forcing moves" },
+        lessons: [
+          {
+            slug: "fourchette-cavalier",
+            title: { fr: "La fourchette du cavalier", de: "Die Springergabel", en: "The knight fork" },
+            objective: { fr: "Reperer un coup de cavalier qui attaque deux cibles.", de: "Einen Springerzug finden, der zwei Ziele angreift.", en: "Find a knight move that attacks two targets." },
+            xpReward: 50,
+            content: {
+              startFen: "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
+              summary: {
+                fr: "Le cavalier est dangereux parce qu'il saute et peut attaquer roi, dame ou pieces non protegees en meme temps.",
+                de: "Der Springer ist gefahrlich, weil er springt und mehrere Ziele zugleich angreifen kann.",
+                en: "The knight is dangerous because it jumps and can attack several targets at once."
+              },
+              mistake: {
+                fr: "Erreur frequente : ne regarder que les captures de la dame et oublier les sauts du cavalier.",
+                de: "Haufiger Fehler: nur Damenzuge sehen und Springersprunge vergessen.",
+                en: "Common mistake: only checking queen captures and missing knight jumps."
+              },
+              moves: [
+                { san: "Nxe5", from: "f3", to: "e5", note: { fr: "Le cavalier capture au centre et cree des menaces tactiques.", de: "Der Springer schlagt im Zentrum und erzeugt taktische Drohungen.", en: "The knight captures in the center and creates tactical threats." } }
+              ],
+              quiz: {
+                question: { fr: "Pourquoi le cavalier surprend-il souvent ?", de: "Warum uberrascht der Springer oft?", en: "Why does the knight often surprise?" },
+                answers: [
+                  { text: { fr: "Il saute par-dessus les pieces", de: "Er springt uber Figuren", en: "It jumps over pieces" }, correct: true },
+                  { text: { fr: "Il se deplace comme une tour", de: "Er zieht wie ein Turm", en: "It moves like a rook" }, correct: false }
+                ]
+              },
+              exercise: { fen: "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3", solution: ["Nxe5"] }
+            }
+          }
+        ]
+      }
+    ]
   }
 ];
 

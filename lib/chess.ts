@@ -59,7 +59,7 @@ function moveBonus(move: Move, clone: Chess) {
   return capture + check + mate + center + promotion;
 }
 
-function orderedMoves(chess: Chess) {
+function orderedMoves(chess: Chess, limit = 24) {
   return (chess.moves({ verbose: true }) as Move[])
     .map((move) => {
       const clone = new Chess(chess.fen());
@@ -67,6 +67,7 @@ function orderedMoves(chess: Chess) {
       return { move, score: moveBonus(move, clone) };
     })
     .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
     .map(({ move }) => move);
 }
 
@@ -74,7 +75,7 @@ function minimax(chess: Chess, depth: number, alpha: number, beta: number): numb
   if (depth === 0 || chess.isGameOver()) return evaluatePosition(chess);
 
   const maximizingWhite = chess.turn() === "w";
-  const moves = orderedMoves(chess);
+  const moves = orderedMoves(chess, depth >= 2 ? 6 : 4);
 
   if (maximizingWhite) {
     let best = -Infinity;
@@ -101,7 +102,7 @@ function minimax(chess: Chess, depth: number, alpha: number, beta: number): numb
 
 export function chooseComputerMove(fen: string, difficulty: "easy" | "medium" | "hard") {
   const chess = new Chess(fen);
-  const moves = chess.moves({ verbose: true }) as Move[];
+  const moves = difficulty === "easy" ? (chess.moves({ verbose: true }) as Move[]) : orderedMoves(chess, difficulty === "hard" ? 8 : 6);
   if (!moves.length) return null;
   if (difficulty === "easy") return moves[Math.floor(Math.random() * moves.length)];
 
