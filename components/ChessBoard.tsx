@@ -10,13 +10,15 @@ export function ChessBoard({
   onMove,
   orientation = "white",
   arrows = [],
-  disabled = false
+  disabled = false,
+  boardWidth
 }: {
   fen: string;
   onMove?: (from: string, to: string, san: string, fen: string) => void;
   orientation?: "white" | "black";
   arrows?: [string, string, string?][];
   disabled?: boolean;
+  boardWidth?: number;
 }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [localFen, setLocalFen] = useState(fen);
@@ -52,6 +54,7 @@ export function ChessBoard({
     <Chessboard
       position={displayFen}
       boardOrientation={orientation}
+      boardWidth={boardWidth}
       arePiecesDraggable={!disabled}
       customArrows={arrows as never}
       customSquareStyles={legalSquares}
