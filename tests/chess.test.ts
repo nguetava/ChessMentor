@@ -39,6 +39,12 @@ describe("learning content", () => {
 
     for (const lesson of lessons) {
       expect(lesson.content.moves.length, lesson.slug).toBeGreaterThan(0);
+      expect(lesson.content.theoryCards.length, lesson.slug).toBeGreaterThanOrEqual(5);
+      for (const card of lesson.content.theoryCards) {
+        expect(card.title.fr.length, lesson.slug).toBeGreaterThan(4);
+        expect(card.body.fr.length, lesson.slug).toBeGreaterThan(80);
+        expect(card.plan.length, lesson.slug).toBeGreaterThanOrEqual(3);
+      }
       expect(lesson.content.checklist.length, lesson.slug).toBeGreaterThanOrEqual(5);
       expect(lesson.content.mastery.length, lesson.slug).toBeGreaterThanOrEqual(4);
       expect(lesson.content.method.fr.length, lesson.slug).toBeGreaterThan(80);

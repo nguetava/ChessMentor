@@ -191,33 +191,26 @@ export function LessonViewer() {
     exercise: "Exercice"
   };
 
-  const pieceIntroCards = lesson.slug === "echiquier-pieces"
-    ? [
-        {
-          title: "Le but du jeu",
-          body: "Une partie d'echecs oppose deux camps, les Blancs et les Noirs. Le but n'est pas de capturer toutes les pieces : il faut attaquer le roi adverse de telle sorte qu'il ne puisse plus fuir, capturer l'attaquant ou bloquer l'attaque. C'est l'echec et mat."
-        },
-        {
-          title: "L'echiquier",
-          body: "L'echiquier contient 64 cases, huit colonnes de a a h et huit rangees de 1 a 8. Les cases claires et foncees alternent. Lire une case comme e4 ou d5 permet de parler la meme langue que les joueurs et de suivre une partie sans confusion."
-        },
-        {
-          title: "Les pieces et leur role",
-          body: "Le roi doit etre protege. La dame est la piece la plus mobile. Les tours dominent lignes et colonnes. Les fous travaillent sur les diagonales. Les cavaliers sautent en L et surprennent. Les pions avancent lentement, controlent en diagonale et peuvent devenir tres forts en arrivant au bout."
-        }
-      ]
-    : [];
-
   const theoryCards = [
-    ...pieceIntroCards,
-    { title: "Idee principale", body: pick(content.summary) },
-    { title: "Methode a retenir", body: pick(content.method) },
-    { title: "Points de controle", body: content.checklist.map((item) => pick(item)) },
-    { title: "Erreur typique", body: pick(content.mistake) }
+    ...content.theoryCards.map((item) => ({
+      title: pick(item.title),
+      body: pick(item.body),
+      plan: item.plan.map((point) => pick(point))
+    })),
+    { title: "Methode a retenir", body: pick(content.method), plan: content.checklist.map((item) => pick(item)).slice(0, 3) },
+    { title: "Points de controle", body: content.checklist.map((item) => pick(item)), plan: content.checklist.map((item) => pick(item)).slice(0, 4) },
+    { title: "Critere de maitrise", body: content.mastery.map((item) => pick(item)), plan: content.mastery.map((item) => pick(item)).slice(0, 4) }
   ];
 
   const currentTheoryCard = theoryCards[Math.min(theoryStep, theoryCards.length - 1)];
   const planIllustration = (() => {
+    if (currentTheoryCard.plan.length > 0) {
+      return {
+        title: currentTheoryCard.title,
+        accent: "Regarde le plateau avec cette idee en tete avant de passer a la suite.",
+        points: currentTheoryCard.plan
+      };
+    }
     if (currentTheoryCard.title === "Le but du jeu") {
       return {
         title: "A retenir maintenant",
@@ -258,7 +251,7 @@ export function LessonViewer() {
         points: Array.isArray(currentTheoryCard.body) ? currentTheoryCard.body.slice(0, 4) : content.checklist.map((item) => pick(item)).slice(0, 4)
       };
     }
-    if (currentTheoryCard.title === "Erreur typique") {
+    if (currentTheoryCard.title === "Erreur typique" || currentTheoryCard.title === "Erreur a neutraliser") {
       return {
         title: "Signal d'alerte",
         accent: "Si tu reconnais cette erreur, ralentis avant de jouer.",
