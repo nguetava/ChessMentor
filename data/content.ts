@@ -18,6 +18,7 @@ type LessonSpec = {
   focus: string;
   commonMistake: string;
   pattern: keyof typeof patterns;
+  depth?: string;
   xp?: number;
 };
 
@@ -161,6 +162,7 @@ const patterns = {
 
 function makeLesson(spec: LessonSpec) {
   const pattern = patterns[spec.pattern];
+  const depth = spec.depth ?? "Passez de l'observation au calcul : reperez la cible, listez les coups forcing, puis choisissez le coup qui laisse le moins de ressources a l'adversaire.";
 
   return {
     slug: spec.slug,
@@ -169,8 +171,27 @@ function makeLesson(spec: LessonSpec) {
     xpReward: spec.xp ?? 35,
     content: {
       startFen: pattern.fen,
-      summary: tr(`${spec.focus} Cette lecon montre une idee pratique avec un exemple jouable sur l'echiquier.`),
+      summary: tr(`${spec.focus} ${depth}`),
       mistake: tr(spec.commonMistake),
+      method: tr(`Methode en quatre temps : 1. nommer le theme, 2. verifier la securite du roi, 3. calculer echecs, captures et menaces, 4. comparer le resultat final avec la position de depart.`),
+      checklist: [
+        tr("Quelle piece adverse est la cible principale ?"),
+        tr("Mon roi est-il en securite apres le coup choisi ?"),
+        tr("Existe-t-il un echec, une capture ou une menace plus forcee ?"),
+        tr("Quelle est la meilleure reponse adverse ?"),
+        tr("Qu'est-ce que j'aurai appris si ce coup echoue ?")
+      ],
+      training: {
+        prompt: tr(`Avant de jouer ${pattern.solution}, expliquez mentalement pourquoi les autres coups candidats sont moins precis.`),
+        target: tr(`Objectif de maitrise : reconnaitre "${spec.title}" dans une vraie partie sans indice.`),
+        repeat: tr("Recommencez la position jusqu'a pouvoir annoncer le theme, le coup et la menace suivante en moins de trente secondes.")
+      },
+      mastery: [
+        tr("Je peux expliquer le theme avec mes propres mots."),
+        tr("Je peux trouver le coup cle sur l'echiquier sans regarder l'indice."),
+        tr("Je peux citer l'erreur typique a eviter."),
+        tr("Je peux relier cette lecon a une position de partie reelle.")
+      ],
       moves: [
         {
           san: pattern.move.san,

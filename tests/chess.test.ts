@@ -31,6 +31,21 @@ describe("learning content", () => {
       expect(chess.moves(), lesson.slug).toContain(lesson.content.exercise.solution[0]);
     }
   });
+
+  it("has a complete progressive course catalog", () => {
+    const lessons = courses.flatMap((course) => course.modules.flatMap((module) => module.lessons));
+    expect(courses).toHaveLength(3);
+    expect(lessons).toHaveLength(46);
+
+    for (const lesson of lessons) {
+      expect(lesson.content.moves.length, lesson.slug).toBeGreaterThan(0);
+      expect(lesson.content.checklist.length, lesson.slug).toBeGreaterThanOrEqual(5);
+      expect(lesson.content.mastery.length, lesson.slug).toBeGreaterThanOrEqual(4);
+      expect(lesson.content.method.fr.length, lesson.slug).toBeGreaterThan(80);
+      expect(lesson.content.training.prompt.fr.length, lesson.slug).toBeGreaterThan(60);
+      expect(lesson.content.summary.fr.length, lesson.slug).toBeGreaterThan(120);
+    }
+  });
 });
 
 describe("progression", () => {

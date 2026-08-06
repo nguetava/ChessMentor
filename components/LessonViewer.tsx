@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Chess } from "chess.js";
-import { ArrowLeft, BookOpen, CheckCircle2, ChevronRight, Circle, Clock3, HelpCircle, Lightbulb, Lock, PlayCircle, RotateCcw, Trophy } from "lucide-react";
+import { ArrowLeft, BookOpen, CheckCircle2, ChevronRight, Circle, Clock3, HelpCircle, Lightbulb, ListChecks, Lock, PlayCircle, RotateCcw, Target, Trophy } from "lucide-react";
 import { ChessBoard } from "@/components/ChessBoard";
 import { courses } from "@/data/content";
 import { pick } from "@/lib/i18n";
@@ -85,6 +85,10 @@ export function LessonViewer() {
   function isLessonAvailable(index: number) {
     if (index === 0) return true;
     return completed.has(lessonKey(courseIndex, lessons[index - 1].slug));
+  }
+
+  function lessonGlobalIndex(moduleIndex: number, lessonInModuleIndex: number) {
+    return course.modules.slice(0, moduleIndex).reduce((sum, module) => sum + module.lessons.length, 0) + lessonInModuleIndex;
   }
 
   function markComplete() {
@@ -177,40 +181,46 @@ export function LessonViewer() {
           </div>
         </header>
 
-        <section className="grid gap-3">
-          {lessons.map((item, index) => {
-            const key = lessonKey(courseIndex, item.slug);
-            const done = completed.has(key);
-            const available = isLessonAvailable(index);
-            const locked = !available && !done;
+        <section className="grid gap-6">
+          {course.modules.map((module, moduleIndex) => (
+            <div key={pick(module.title)} className="grid gap-3">
+              <h2 className="rounded bg-mint px-4 py-3 text-lg font-semibold text-ink">{pick(module.title)}</h2>
+              {module.lessons.map((item, lessonInModuleIndex) => {
+                const index = lessonGlobalIndex(moduleIndex, lessonInModuleIndex);
+                const key = lessonKey(courseIndex, item.slug);
+                const done = completed.has(key);
+                const available = isLessonAvailable(index);
+                const locked = !available && !done;
 
-            return (
-              <article key={item.slug} className={`grid gap-4 rounded border p-4 ${done ? "border-ink bg-ink text-white dark:border-coral dark:bg-coral" : locked ? "border-black/10 opacity-60 dark:border-white/10" : "border-coral bg-coral/5"}`}>
-                <div className="grid gap-3 lg:grid-cols-[44px_1fr_180px] lg:items-center">
-                  <div className="flex h-11 w-11 items-center justify-center rounded border border-current/20 text-lg font-semibold">{index + 1}</div>
-                  <div>
-                    <h2 className="text-xl font-semibold">{pick(item.title)}</h2>
-                    <p className={`mt-1 text-sm ${done ? "text-white/80" : "text-sage dark:text-mint"}`}>{pick(item.objective)}</p>
-                  </div>
-                  <button
-                    className={`flex items-center justify-center gap-2 rounded px-4 py-3 text-sm ${locked ? "border border-current/20" : done ? "bg-white text-ink" : "bg-ink text-white dark:bg-coral"}`}
-                    disabled={locked}
-                    onClick={() => openLesson(index)}
-                  >
-                    {locked ? <Lock size={17} /> : done ? <CheckCircle2 size={17} /> : <PlayCircle size={17} />}
-                    {locked ? "Bloque" : done ? "Revoir" : index === 0 ? "Commencer" : "Continuer"}
-                  </button>
-                </div>
-                <dl className={`grid gap-2 text-sm sm:grid-cols-5 ${done ? "text-white/80" : "text-sage dark:text-mint"}`}>
-                  <div><dt>Statut</dt><dd>{done ? "Terminee" : locked ? "Terminez la lecon precedente" : "Vous pouvez commencer"}</dd></div>
-                  <div><dt>Recommencee</dt><dd>0 x</dd></div>
-                  <div><dt>Temps utilise</dt><dd>{index === 0 ? stats.time : "-"}</dd></div>
-                  <div><dt>Mauvaises reponses</dt><dd>{done ? "0 %" : stats.wrong}</dd></div>
-                  <div><dt>Conseils utilises</dt><dd>{done ? "0 %" : stats.hints}</dd></div>
-                </dl>
-              </article>
-            );
-          })}
+                return (
+                  <article key={item.slug} className={`grid gap-4 rounded border p-4 ${done ? "border-ink bg-ink text-white dark:border-coral dark:bg-coral" : locked ? "border-black/10 opacity-60 dark:border-white/10" : "border-coral bg-coral/5"}`}>
+                    <div className="grid gap-3 lg:grid-cols-[44px_1fr_180px] lg:items-center">
+                      <div className="flex h-11 w-11 items-center justify-center rounded border border-current/20 text-lg font-semibold">{index + 1}</div>
+                      <div>
+                        <h3 className="text-xl font-semibold">{pick(item.title)}</h3>
+                        <p className={`mt-1 text-sm ${done ? "text-white/80" : "text-sage dark:text-mint"}`}>{pick(item.objective)}</p>
+                      </div>
+                      <button
+                        className={`flex items-center justify-center gap-2 rounded px-4 py-3 text-sm ${locked ? "border border-current/20" : done ? "bg-white text-ink" : "bg-ink text-white dark:bg-coral"}`}
+                        disabled={locked}
+                        onClick={() => openLesson(index)}
+                      >
+                        {locked ? <Lock size={17} /> : done ? <CheckCircle2 size={17} /> : <PlayCircle size={17} />}
+                        {locked ? "Bloque" : done ? "Revoir" : index === 0 ? "Commencer" : "Continuer"}
+                      </button>
+                    </div>
+                    <dl className={`grid gap-2 text-sm sm:grid-cols-5 ${done ? "text-white/80" : "text-sage dark:text-mint"}`}>
+                      <div><dt>Statut</dt><dd>{done ? "Terminee" : locked ? "Terminez la lecon precedente" : "Vous pouvez commencer"}</dd></div>
+                      <div><dt>Recommencee</dt><dd>0 x</dd></div>
+                      <div><dt>Temps utilise</dt><dd>{index === 0 ? stats.time : "-"}</dd></div>
+                      <div><dt>Mauvaises reponses</dt><dd>{done ? "0 %" : stats.wrong}</dd></div>
+                      <div><dt>Conseils utilises</dt><dd>{done ? "0 %" : stats.hints}</dd></div>
+                    </dl>
+                  </article>
+                );
+              })}
+            </div>
+          ))}
         </section>
       </main>
     );
@@ -247,6 +257,16 @@ export function LessonViewer() {
         <aside className="grid content-start gap-4 rounded border border-black/10 p-5 dark:border-white/10">
           <p>{pick(content.summary)}</p>
           <p className="rounded bg-coral/10 p-3 text-sm">{step ? pick(content.moves[step - 1].note) : "Avancez coup par coup pour voir l'explication."}</p>
+          <div className="rounded border border-black/10 p-4 text-sm dark:border-white/10">
+            <h2 className="flex items-center gap-2 font-semibold"><Target size={18} /> Methode</h2>
+            <p className="mt-2 text-sage dark:text-mint">{pick(content.method)}</p>
+          </div>
+          <div className="rounded border border-black/10 p-4 text-sm dark:border-white/10">
+            <h2 className="flex items-center gap-2 font-semibold"><ListChecks size={18} /> Checklist</h2>
+            <ul className="mt-2 grid gap-2 text-sage dark:text-mint">
+              {content.checklist.map((item) => <li key={pick(item)}>- {pick(item)}</li>)}
+            </ul>
+          </div>
           <p className="text-sm text-sage dark:text-mint">{pick(content.mistake)}</p>
           <div className="rounded border p-4 dark:border-white/10">
             <h2 className="flex items-center gap-2 font-semibold"><HelpCircle size={18} /> Question de controle</h2>
@@ -259,6 +279,17 @@ export function LessonViewer() {
             {quiz && <p className="mt-2 text-sm text-coral">{quiz}</p>}
           </div>
           <button className="flex items-center justify-center gap-2 rounded border px-4 py-3" onClick={() => setQuiz(`Indice : joue ${content.exercise.solution[0]}`)}><Lightbulb size={18} /> Demander un indice</button>
+          <div className="rounded bg-mint p-4 text-sm text-ink">
+            <h2 className="font-semibold">Entrainement cible</h2>
+            <p className="mt-2">{pick(content.training.prompt)}</p>
+            <p className="mt-2">{pick(content.training.target)}</p>
+          </div>
+          <details className="rounded border border-black/10 p-4 text-sm dark:border-white/10">
+            <summary className="cursor-pointer font-semibold">Criteres de maitrise</summary>
+            <ul className="mt-3 grid gap-2 text-sage dark:text-mint">
+              {content.mastery.map((item) => <li key={pick(item)}>- {pick(item)}</li>)}
+            </ul>
+          </details>
           <button className="flex items-center justify-center gap-2 rounded bg-coral px-4 py-3 text-white" onClick={markComplete} disabled={completed.has(currentKey)}>
             <Trophy size={18} /> {completed.has(currentKey) ? "Lecon deja terminee" : "Marquer cette lecon terminee"}
           </button>
