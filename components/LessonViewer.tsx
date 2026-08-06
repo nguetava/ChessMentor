@@ -28,6 +28,10 @@ function lessonKey(courseIndex: number, lessonSlug: string) {
   return `${courses[courseIndex].slug}:${lessonSlug}`;
 }
 
+function includesAny(text: string, words: string[]) {
+  return words.some((word) => text.includes(word));
+}
+
 export function LessonViewer() {
   const [mode, setMode] = useState<ViewMode>("courses");
   const [courseIndex, setCourseIndex] = useState(0);
@@ -48,8 +52,8 @@ export function LessonViewer() {
   const progress = lessons.length ? Math.round((completedCount / lessons.length) * 100) : 0;
   const stats = levelStats[courseIndex] ?? levelStats[0];
   const boardSize = Math.max(
-    360,
-    Math.min(760, viewport.height - 210, viewport.width >= 1280 ? viewport.width - (railOpen ? 760 : 520) : viewport.width - 48)
+    390,
+    Math.min(780, viewport.height - 210, viewport.width >= 1280 ? viewport.width - (railOpen ? 820 : 610) : viewport.width - 48)
   );
 
   const fen = useMemo(() => {
@@ -305,8 +309,114 @@ export function LessonViewer() {
     setQuiz("");
   }
 
-  const displayFen = currentCourseStep.kind === "demo" ? fen : content.startFen;
-  const displayArrows = currentCourseStep.kind === "demo" && step ? [[content.moves[step - 1].from, content.moves[step - 1].to, "rgb(215,109,87)"]] as [string, string, string?][] : [];
+  const boardIllustration = (() => {
+    const title = currentCourseStep.title.toLowerCase();
+    const slug = lesson.slug;
+    const context = `${title} ${slug === "echiquier-pieces" ? "" : slug}`;
+    const solutionMove = content.moves[0];
+
+    if (currentCourseStep.kind === "demo") {
+      return {
+        fen,
+        arrows: step ? [[content.moves[step - 1].from, content.moves[step - 1].to, "rgb(215,109,87)"]] as [string, string, string?][] : [],
+        caption: step ? pick(content.moves[step - 1].note) : "L'exemple se jouera directement sur ce plateau."
+      };
+    }
+
+    if (currentCourseStep.kind === "exercise") {
+      return {
+        fen: content.exercise.fen,
+        arrows: solutionMove ? [[solutionMove.from, solutionMove.to, "rgb(215,109,87)"]] as [string, string, string?][] : [],
+        caption: `Position d'exercice : cherche ${content.exercise.solution[0]} sur le plateau.`
+      };
+    }
+
+    if (includesAny(context, ["but du jeu", "mat", "roi adverse", "echec et mat"])) {
+      return {
+        fen: "6k1/6pp/8/7Q/8/8/5PPP/6K1 w - - 0 1",
+        arrows: [["h5", "e8", "rgb(215,109,87)"]] as [string, string, string?][],
+        caption: "Le plateau montre un filet de mat : la dame attaque et le roi adverse manque de cases."
+      };
+    }
+
+    if (includesAny(context, ["pieces", "piece", "forces", "valeur", "role"])) {
+      return {
+        fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        arrows: [["e2", "e4", "rgb(215,109,87)"], ["g1", "f3", "rgb(55,151,185)"], ["f1", "c4", "rgb(55,151,185)"]] as [string, string, string?][],
+        caption: "La position initiale sert a reperer les familles de pieces et leurs premiers roles."
+      };
+    }
+
+    if (includesAny(context, ["echiquier", "coordonne", "case", "lire le plateau"])) {
+      return {
+        fen: "4k3/8/8/3p4/8/3R4/8/4K3 w - - 0 1",
+        arrows: [["d3", "d5", "rgb(215,109,87)"], ["a1", "h1", "rgb(55,151,185)"], ["a1", "a8", "rgb(55,151,185)"]] as [string, string, string?][],
+        caption: "Les fleches rappellent colonne, rangee et case cible : lire le plateau avant de jouer."
+      };
+    }
+
+    if (includesAny(context, ["roque", "securite", "roi fragile", "bouclier"])) {
+      return {
+        fen: "r1bqk1nr/pppp1ppp/2n5/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4",
+        arrows: [["e1", "g1", "rgb(215,109,87)"], ["h1", "f1", "rgb(55,151,185)"]] as [string, string, string?][],
+        caption: "Le roque illustre la securite du roi et l'activation de la tour."
+      };
+    }
+
+    if (includesAny(context, ["promotion", "pion passe", "finale", "opposition", "case cle", "roi actif"])) {
+      return {
+        fen: "8/8/8/4k3/8/4K3/4P3/8 w - - 0 1",
+        arrows: [["e3", "e4", "rgb(55,151,185)"], ["e2", "e4", "rgb(215,109,87)"]] as [string, string, string?][],
+        caption: "En finale, le roi accompagne le pion : la position montre l'idee de progression."
+      };
+    }
+
+    if (includesAny(context, ["centre", "ouverture", "developpement", "gambit", "temps"])) {
+      return {
+        fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+        arrows: [["e2", "e4", "rgb(215,109,87)"], ["d2", "d4", "rgb(215,109,87)"], ["g1", "f3", "rgb(55,151,185)"], ["f1", "c4", "rgb(55,151,185)"]] as [string, string, string?][],
+        caption: "Les fleches montrent centre, developpement et sortie naturelle des pieces."
+      };
+    }
+
+    if (includesAny(context, ["clouage", "pression", "pin"])) {
+      return {
+        fen: "rnbqk2r/ppppbppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQK2R w KQkq - 4 4",
+        arrows: [["e2", "b5", "rgb(215,109,87)"], ["b5", "e8", "rgb(55,151,185)"]] as [string, string, string?][],
+        caption: "Le fou se place sur une ligne ou la piece devant protege une cible plus importante."
+      };
+    }
+
+    if (includesAny(context, ["fourchette", "attaque double", "cavalier"])) {
+      return {
+        fen: "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
+        arrows: [["f3", "e5", "rgb(215,109,87)"], ["e5", "c6", "rgb(55,151,185)"], ["e5", "f7", "rgb(55,151,185)"]] as [string, string, string?][],
+        caption: "Le cavalier illustre les sauts et les attaques doubles possibles."
+      };
+    }
+
+    if (includesAny(context, ["tour", "colonne", "ligne", "enfilade"])) {
+      return {
+        fen: "4k3/8/8/8/8/8/8/4K2R w K - 0 1",
+        arrows: [["h1", "h8", "rgb(215,109,87)"], ["h8", "e8", "rgb(55,151,185)"]] as [string, string, string?][],
+        caption: "La tour utilise une ligne ouverte pour donner echec ou couper le roi."
+      };
+    }
+
+    if (includesAny(context, ["structure", "pion", "levier", "chaine"])) {
+      return {
+        fen: "4k3/8/8/2ppp3/3PP3/8/8/4K3 w - - 0 1",
+        arrows: [["d4", "c5", "rgb(215,109,87)"], ["e4", "e5", "rgb(55,151,185)"]] as [string, string, string?][],
+        caption: "La structure de pions montre les leviers, les chaines et les cases faibles."
+      };
+    }
+
+    return {
+      fen: content.startFen,
+      arrows: solutionMove ? [[solutionMove.from, solutionMove.to, "rgb(215,109,87)"]] as [string, string, string?][] : [],
+      caption: "Le plateau illustre la position centrale de cette etape."
+    };
+  })();
 
   if (mode === "courses") {
     const totalLessons = courses.reduce((sum, item) => sum + item.modules.flatMap((module) => module.lessons).length, 0);
@@ -441,7 +551,7 @@ export function LessonViewer() {
 
   return (
     <main className="mx-auto grid h-[calc(100svh-124px)] max-w-none overflow-hidden px-3 py-2 lg:h-[calc(100svh-64px)] lg:max-w-[1900px] lg:px-4">
-      <section className={`grid min-h-0 gap-3 overflow-hidden ${railOpen ? "xl:grid-cols-[280px_minmax(520px,1fr)_420px]" : "xl:grid-cols-[48px_minmax(520px,1fr)_420px]"}`}>
+      <section className={`grid min-h-0 gap-3 overflow-hidden ${railOpen ? "xl:grid-cols-[260px_minmax(520px,1fr)_minmax(400px,460px)]" : "xl:grid-cols-[48px_minmax(560px,1fr)_minmax(460px,540px)]"}`}>
         {renderLessonRail()}
 
         <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded border border-black/10 bg-white dark:border-white/10 dark:bg-white/5">
@@ -457,7 +567,10 @@ export function LessonViewer() {
           </div>
 
           <div className="grid min-h-0 place-items-center overflow-hidden p-2">
-            <ChessBoard fen={displayFen} arrows={displayArrows} boardWidth={boardSize} disabled={currentCourseStep.kind !== "exercise"} />
+            <div className="grid place-items-center gap-2">
+              <ChessBoard fen={boardIllustration.fen} arrows={boardIllustration.arrows} boardWidth={boardSize} disabled={currentCourseStep.kind !== "exercise"} />
+              <p className="max-w-2xl rounded bg-coral/10 px-3 py-2 text-center text-sm font-medium text-ink dark:text-mint">{boardIllustration.caption}</p>
+            </div>
           </div>
 
           <div className="grid grid-cols-4 gap-2 border-t border-black/10 p-2 dark:border-white/10">
