@@ -217,6 +217,68 @@ export function LessonViewer() {
   ];
 
   const currentTheoryCard = theoryCards[Math.min(theoryStep, theoryCards.length - 1)];
+  const planIllustration = (() => {
+    if (currentTheoryCard.title === "Le but du jeu") {
+      return {
+        title: "A retenir maintenant",
+        accent: "Objectif : mettre le roi adverse en echec et mat.",
+        points: [
+          "Le roi est la seule piece qu'on ne peut jamais laisser en prise.",
+          "Un echec oblige a repondre tout de suite.",
+          "Le mat arrive quand aucune reponse ne sauve le roi."
+        ]
+      };
+    }
+    if (currentTheoryCard.title === "L'echiquier") {
+      return {
+        title: "Lire le plateau",
+        accent: "Regarde les coordonnees comme une carte : colonne + rangee.",
+        points: [
+          "Les colonnes vont de a a h.",
+          "Les rangees vont de 1 a 8.",
+          "Une case se nomme par exemple e4, d5 ou h8."
+        ]
+      };
+    }
+    if (currentTheoryCard.title === "Les pieces et leur role") {
+      return {
+        title: "Famille des pieces",
+        accent: "Chaque piece a une mission differente.",
+        points: [
+          "Roi : survivre et se rapprocher en finale.",
+          "Dame et tours : pieces lourdes, tres fortes sur lignes ouvertes.",
+          "Fous, cavaliers et pions : controle, blocage, attaques courtes."
+        ]
+      };
+    }
+    if (currentTheoryCard.title === "Points de controle") {
+      return {
+        title: "Auto-questionnement",
+        accent: "Avant de jouer, passe ces questions dans l'ordre.",
+        points: Array.isArray(currentTheoryCard.body) ? currentTheoryCard.body.slice(0, 4) : content.checklist.map((item) => pick(item)).slice(0, 4)
+      };
+    }
+    if (currentTheoryCard.title === "Erreur typique") {
+      return {
+        title: "Signal d'alerte",
+        accent: "Si tu reconnais cette erreur, ralentis avant de jouer.",
+        points: [
+          pick(content.mistake),
+          "Reviens a la methode.",
+          "Cherche la meilleure reponse adverse avant de valider."
+        ]
+      };
+    }
+    return {
+      title: "Fil conducteur",
+      accent: "Comprendre l'idee avant de regarder le coup.",
+      points: [
+        "Lis la carte courante.",
+        "Reformule l'idee avec tes mots.",
+        "Passe ensuite seulement a l'exemple sur l'echiquier."
+      ]
+    };
+  })();
 
   if (mode === "courses") {
     const totalLessons = courses.reduce((sum, item) => sum + item.modules.flatMap((module) => module.lessons).length, 0);
@@ -372,9 +434,6 @@ export function LessonViewer() {
                   ))}
                 </div>
               </div>
-              <p className="mt-2 text-xs font-semibold uppercase text-coral">Lecon {lessonIndex + 1}/{lessons.length}</p>
-              <h1 className="truncate text-xl font-semibold lg:text-2xl">{pick(lesson.title)}</h1>
-              <p className="truncate text-sm text-sage dark:text-mint">{pick(lesson.objective)}</p>
             </div>
             <div className="min-h-0 overflow-y-auto p-3">
               <section className="grid h-full content-center gap-4 rounded bg-mint p-5 text-ink">
@@ -403,17 +462,19 @@ export function LessonViewer() {
 
           <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded border border-black/10 dark:border-white/10">
             <div className="border-b border-black/10 p-3 dark:border-white/10">
-              <h2 className="flex items-center gap-2 font-semibold"><BookOpen size={17} /> Plan de travail</h2>
+              <h2 className="flex items-center gap-2 font-semibold"><BookOpen size={17} /> {planIllustration.title}</h2>
+              <p className="mt-1 text-xs text-sage dark:text-mint">Carte {theoryStep + 1}/{theoryCards.length}</p>
             </div>
-            <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3 overflow-hidden p-3 text-sm">
+            <div className="grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-3 overflow-hidden p-3 text-sm">
               <div className="mx-auto hidden w-full max-w-56 sm:block xl:max-w-full">
                 <ChessBoard fen={content.startFen} disabled />
               </div>
-              <ol className="grid content-start gap-2 overflow-y-auto">
-                <li className="rounded bg-ink p-3 text-white dark:bg-coral"><strong>1. Theorie</strong><br />Comprendre le principe avec des mots simples.</li>
-                <li className="rounded border border-black/10 p-3 dark:border-white/10"><strong>2. Demonstration</strong><br />Observer le coup cle sur l&apos;echiquier.</li>
-                <li className="rounded border border-black/10 p-3 dark:border-white/10"><strong>3. Exercice</strong><br />Repondre, demander un indice si besoin, puis valider.</li>
-              </ol>
+              <p className="rounded bg-coral/10 p-3 font-semibold">{planIllustration.accent}</p>
+              <ul className="grid content-start gap-2 overflow-y-auto">
+                {planIllustration.points.map((point) => (
+                  <li key={point} className="rounded border border-black/10 p-3 dark:border-white/10">{point}</li>
+                ))}
+              </ul>
             </div>
             <div className="border-t border-black/10 p-3 text-xs text-sage dark:border-white/10 dark:text-mint">
               La lecon n&apos;est marquee terminee qu&apos;apres l&apos;exercice.
