@@ -227,80 +227,89 @@ export function LessonViewer() {
   }
 
   return (
-    <main className="mx-auto grid max-w-6xl gap-6 px-4 py-8">
-      <header className="grid gap-3 border-b border-black/10 pb-5 dark:border-white/10">
-        <button className="flex w-fit items-center gap-2 rounded border border-black/10 px-3 py-2 text-sm dark:border-white/10" onClick={() => setMode("lessons")}>
-          <ArrowLeft size={16} /> Lecons du niveau
-        </button>
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold uppercase text-coral">Lecon {lessonIndex + 1}/{lessons.length} - Niveau {course.level}</p>
-            <h1 className="text-3xl font-semibold">{pick(lesson.title)}</h1>
-            <p className="mt-2 max-w-3xl text-sage dark:text-mint">{pick(lesson.objective)}</p>
-          </div>
+    <main className="mx-auto grid h-[calc(100vh-64px)] max-w-7xl grid-rows-[auto_1fr] gap-3 overflow-hidden px-4 py-3">
+      <header className="grid gap-2 border-b border-black/10 pb-3 dark:border-white/10">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <button className="flex items-center gap-2 rounded border border-black/10 px-3 py-2 text-sm dark:border-white/10" onClick={() => setMode("lessons")}>
+            <ArrowLeft size={16} /> Lecons du niveau
+          </button>
           {completed.has(currentKey) && <span className="inline-flex items-center gap-2 rounded bg-ink px-3 py-2 text-sm text-white dark:bg-coral"><CheckCircle2 size={17} /> Terminee</span>}
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase text-coral">Lecon {lessonIndex + 1}/{lessons.length} - Niveau {course.level}</p>
+          <h1 className="truncate text-2xl font-semibold">{pick(lesson.title)}</h1>
+          <p className="line-clamp-2 max-w-5xl text-sm text-sage dark:text-mint">{pick(lesson.objective)}</p>
         </div>
       </header>
 
-      <section className="grid gap-6 lg:grid-cols-[1fr_340px]">
-        <div className="grid gap-4">
-          <div className="mx-auto w-full max-w-[620px]">
+      <section className="grid min-h-0 gap-4 lg:grid-cols-[minmax(420px,1fr)_390px]">
+        <div className="grid min-h-0 grid-rows-[1fr_auto] gap-3">
+          <div className="mx-auto grid min-h-0 w-full max-w-[min(68vh,620px)] place-items-center">
             <ChessBoard fen={fen} arrows={step ? [[content.moves[step - 1].from, content.moves[step - 1].to, "rgb(215,109,87)"]] : []} />
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button className="flex items-center gap-2 rounded border px-4 py-2" onClick={() => setStep(Math.max(0, step - 1))}><ArrowLeft size={16} /> Reculer</button>
-            <button className="flex items-center gap-2 rounded border px-4 py-2" onClick={() => setStep(0)}><RotateCcw size={16} /> Rejouer</button>
-            <button className="flex items-center gap-2 rounded bg-ink px-4 py-2 text-white dark:bg-coral" onClick={() => setStep(Math.min(content.moves.length, step + 1))}>Avancer <ChevronRight size={16} /></button>
+          <div className="grid grid-cols-3 gap-2">
+            <button className="flex min-h-11 items-center justify-center gap-2 rounded border px-3 py-2 text-sm" onClick={() => setStep(Math.max(0, step - 1))}><ArrowLeft size={16} /> Reculer</button>
+            <button className="flex min-h-11 items-center justify-center gap-2 rounded border px-3 py-2 text-sm" onClick={() => setStep(0)}><RotateCcw size={16} /> Rejouer</button>
+            <button className="flex min-h-11 items-center justify-center gap-2 rounded bg-ink px-3 py-2 text-sm text-white dark:bg-coral" onClick={() => setStep(Math.min(content.moves.length, step + 1))}>Avancer <ChevronRight size={16} /></button>
           </div>
         </div>
 
-        <aside className="grid content-start gap-4 rounded border border-black/10 p-5 dark:border-white/10">
-          <p>{pick(content.summary)}</p>
-          <p className="rounded bg-coral/10 p-3 text-sm">{step ? pick(content.moves[step - 1].note) : "Avancez coup par coup pour voir l'explication."}</p>
-          <div className="rounded border border-black/10 p-4 text-sm dark:border-white/10">
-            <h2 className="flex items-center gap-2 font-semibold"><Target size={18} /> Methode</h2>
-            <p className="mt-2 text-sage dark:text-mint">{pick(content.method)}</p>
-          </div>
-          <div className="rounded border border-black/10 p-4 text-sm dark:border-white/10">
-            <h2 className="flex items-center gap-2 font-semibold"><ListChecks size={18} /> Checklist</h2>
-            <ul className="mt-2 grid gap-2 text-sage dark:text-mint">
-              {content.checklist.map((item) => <li key={pick(item)}>- {pick(item)}</li>)}
-            </ul>
-          </div>
-          <p className="text-sm text-sage dark:text-mint">{pick(content.mistake)}</p>
-          <div className="rounded border p-4 dark:border-white/10">
-            <h2 className="flex items-center gap-2 font-semibold"><HelpCircle size={18} /> Question de controle</h2>
-            <p className="mt-2 text-sm">{pick(content.quiz.question)}</p>
-            <div className="mt-3 grid gap-2">
-              {content.quiz.answers.map((answer) => (
-                <button key={pick(answer.text)} className="rounded border px-3 py-2 text-left text-sm" onClick={() => setQuiz(answer.correct ? "Correct." : "Essaie encore.")}>{pick(answer.text)}</button>
-              ))}
+        <aside className="grid min-h-0 grid-rows-[1fr_auto] rounded border border-black/10 dark:border-white/10">
+          <div className="min-h-0 overflow-y-auto p-4">
+            <div className="grid gap-3 text-sm">
+              <p>{pick(content.summary)}</p>
+              <p className="rounded bg-coral/10 p-3">{step ? pick(content.moves[step - 1].note) : "Avancez coup par coup pour voir l'explication."}</p>
+              <section className="rounded border border-black/10 p-3 dark:border-white/10">
+                <h2 className="flex items-center gap-2 font-semibold"><Target size={17} /> Methode</h2>
+                <p className="mt-2 text-sage dark:text-mint">{pick(content.method)}</p>
+              </section>
+              <section className="rounded border border-black/10 p-3 dark:border-white/10">
+                <h2 className="flex items-center gap-2 font-semibold"><ListChecks size={17} /> Checklist</h2>
+                <ul className="mt-2 grid gap-1 text-sage dark:text-mint">
+                  {content.checklist.map((item) => <li key={pick(item)}>- {pick(item)}</li>)}
+                </ul>
+              </section>
+              <p className="text-sage dark:text-mint">{pick(content.mistake)}</p>
+              <section className="rounded border p-3 dark:border-white/10">
+                <h2 className="flex items-center gap-2 font-semibold"><HelpCircle size={17} /> Question</h2>
+                <p className="mt-2">{pick(content.quiz.question)}</p>
+                <div className="mt-2 grid gap-2">
+                  {content.quiz.answers.map((answer) => (
+                    <button key={pick(answer.text)} className="rounded border px-3 py-2 text-left" onClick={() => setQuiz(answer.correct ? "Correct." : "Essaie encore.")}>{pick(answer.text)}</button>
+                  ))}
+                </div>
+                {quiz && <p className="mt-2 text-coral">{quiz}</p>}
+              </section>
+              <section className="rounded bg-mint p-3 text-ink">
+                <h2 className="font-semibold">Entrainement cible</h2>
+                <p className="mt-2">{pick(content.training.prompt)}</p>
+                <p className="mt-2">{pick(content.training.target)}</p>
+              </section>
+              <details className="rounded border border-black/10 p-3 dark:border-white/10">
+                <summary className="cursor-pointer font-semibold">Criteres de maitrise</summary>
+                <ul className="mt-2 grid gap-1 text-sage dark:text-mint">
+                  {content.mastery.map((item) => <li key={pick(item)}>- {pick(item)}</li>)}
+                </ul>
+              </details>
             </div>
-            {quiz && <p className="mt-2 text-sm text-coral">{quiz}</p>}
           </div>
-          <button className="flex items-center justify-center gap-2 rounded border px-4 py-3" onClick={() => setQuiz(`Indice : joue ${content.exercise.solution[0]}`)}><Lightbulb size={18} /> Demander un indice</button>
-          <div className="rounded bg-mint p-4 text-sm text-ink">
-            <h2 className="font-semibold">Entrainement cible</h2>
-            <p className="mt-2">{pick(content.training.prompt)}</p>
-            <p className="mt-2">{pick(content.training.target)}</p>
-          </div>
-          <details className="rounded border border-black/10 p-4 text-sm dark:border-white/10">
-            <summary className="cursor-pointer font-semibold">Criteres de maitrise</summary>
-            <ul className="mt-3 grid gap-2 text-sage dark:text-mint">
-              {content.mastery.map((item) => <li key={pick(item)}>- {pick(item)}</li>)}
-            </ul>
-          </details>
-          <button className="flex items-center justify-center gap-2 rounded bg-coral px-4 py-3 text-white" onClick={markComplete} disabled={completed.has(currentKey)}>
-            <Trophy size={18} /> {completed.has(currentKey) ? "Lecon deja terminee" : "Marquer cette lecon terminee"}
-          </button>
-          {completed.has(currentKey) && lessonIndex < lessons.length - 1 && (
-            <button className="flex items-center justify-center gap-2 rounded bg-ink px-4 py-3 text-white dark:bg-coral" onClick={nextLesson}>
-              Lecon suivante <ChevronRight size={18} />
-            </button>
-          )}
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <span className="rounded border p-2 dark:border-white/10"><Clock3 size={16} /> 3-7 min</span>
-            <span className="rounded border p-2 dark:border-white/10">Solution {stats.solutions}</span>
+
+          <div className="grid gap-2 border-t border-black/10 p-3 dark:border-white/10">
+            <div className="grid grid-cols-2 gap-2">
+              <button className="flex min-h-11 items-center justify-center gap-2 rounded border px-3 py-2 text-sm" onClick={() => setQuiz(`Indice : joue ${content.exercise.solution[0]}`)}><Lightbulb size={17} /> Indice</button>
+              <button className="flex min-h-11 items-center justify-center gap-2 rounded bg-coral px-3 py-2 text-sm text-white" onClick={markComplete} disabled={completed.has(currentKey)}>
+                <Trophy size={17} /> {completed.has(currentKey) ? "Terminee" : "Valider"}
+              </button>
+            </div>
+            {completed.has(currentKey) && lessonIndex < lessons.length - 1 && (
+              <button className="flex min-h-11 items-center justify-center gap-2 rounded bg-ink px-3 py-2 text-sm text-white dark:bg-coral" onClick={nextLesson}>
+                Lecon suivante <ChevronRight size={17} />
+              </button>
+            )}
+            <div className="grid grid-cols-2 gap-2 text-xs text-sage dark:text-mint">
+              <span className="rounded border p-2 dark:border-white/10"><Clock3 size={14} /> 3-7 min</span>
+              <span className="rounded border p-2 dark:border-white/10">Solution {stats.solutions}</span>
+            </div>
           </div>
         </aside>
       </section>
