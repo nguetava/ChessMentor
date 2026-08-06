@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, Brain, ChartNoAxesColumnIncreasing, Home, Languages, Moon, Shield, Sun, User, Zap } from "lucide-react";
+import { BookOpen, Brain, ChartNoAxesColumnIncreasing, Home, Languages, LogOut, Moon, Shield, Sun, User, Zap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { dictionaries, normalizeLocale } from "@/lib/i18n";
 import type { Locale } from "@/data/content";
@@ -17,11 +17,17 @@ const navItems = [
   ["/admin", "admin", Shield]
 ] as const;
 
+type SessionUser = {
+  displayName: string;
+  email: string;
+};
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [locale, setLocale] = useState<Locale>("fr");
   const [dark, setDark] = useState(false);
+  const [user, setUser] = useState<SessionUser | null | undefined>(undefined);
   const dict = dictionaries[locale];
 
   useEffect(() => {
@@ -34,12 +40,36 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     localStorage.setItem("theme", dark ? "dark" : "light");
   }, [dark]);
 
+  useEffect(() => {
+    let activeRequest = true;
+
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((data) => {
+        if (activeRequest) setUser(data.user ?? null);
+      })
+      .catch(() => {
+        if (activeRequest) setUser(null);
+      });
+
+    return () => {
+      activeRequest = false;
+    };
+  }, [pathname]);
+
   const active = useMemo(() => pathname || "/", [pathname]);
 
   function changeLocale(value: Locale) {
     setLocale(value);
     localStorage.setItem("locale", value);
     router.refresh();
+  }
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setUser(null);
+    router.refresh();
+    if (pathname === "/profile" || pathname === "/dashboard") router.push("/");
   }
 
   return (
@@ -76,6 +106,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <button onClick={() => setDark((value) => !value)} className="grid h-9 w-9 place-items-center rounded border border-black/10 dark:border-white/10" aria-label="Changer de theme">
             {dark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
+          {user ? (
+            <div className="hidden items-center gap-2 rounded border border-black/10 px-2 py-1 text-sm dark:border-white/10 sm:flex">
+              <Link href="/profile" className="flex max-w-36 items-center gap-2 truncate">
+                <User size={16} aria-hidden />
+                <span className="truncate">{user.displayName}</span>
+              </Link>
+              <button onClick={logout} className="grid h-7 w-7 place-items-center rounded hover:bg-black/5 dark:hover:bg-white/10" aria-label="Se deconnecter">
+                <LogOut size={15} />
+              </button>
+            </div>
+          ) : user === null ? (
+            <Link href="/#auth" className="hidden rounded bg-ink px-3 py-2 text-sm text-white dark:bg-coral sm:inline-flex">
+              Connexion
+            </Link>
+          ) : null}
         </nav>
         <div className="flex gap-1 overflow-x-auto px-4 pb-3 lg:hidden">
           {navItems.map(([href, key, Icon]) => (

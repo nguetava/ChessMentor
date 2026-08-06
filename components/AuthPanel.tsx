@@ -1,11 +1,34 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { levels } from "@/data/content";
+
+type SessionUser = {
+  displayName: string;
+  email: string;
+};
 
 export function AuthPanel() {
   const [mode, setMode] = useState<"login" | "register">("register");
   const [message, setMessage] = useState("");
+  const [user, setUser] = useState<SessionUser | null | undefined>(undefined);
+
+  useEffect(() => {
+    let active = true;
+
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((data) => {
+        if (active) setUser(data.user ?? null);
+      })
+      .catch(() => {
+        if (active) setUser(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   async function submit(formData: FormData) {
     setMessage("Chargement...");
@@ -21,6 +44,36 @@ export function AuthPanel() {
       return;
     }
     window.location.href = "/dashboard";
+  }
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setUser(null);
+    setMessage("Vous etes deconnecte.");
+    window.location.reload();
+  }
+
+  if (user === undefined) {
+    return (
+      <section className="rounded border border-black/10 bg-white p-5 shadow-soft dark:border-white/10 dark:bg-white/5">
+        <p className="text-sm text-sage dark:text-mint">Verification de la session...</p>
+      </section>
+    );
+  }
+
+  if (user) {
+    return (
+      <section className="rounded border border-black/10 bg-white p-5 shadow-soft dark:border-white/10 dark:bg-white/5">
+        <p className="text-sm font-semibold uppercase text-coral">Session active</p>
+        <h2 className="mt-2 text-2xl font-semibold">Bonjour {user.displayName}</h2>
+        <p className="mt-2 text-sm text-sage dark:text-mint">Vous etes deja connecte avec {user.email}. Vous pouvez continuer sans vous inscrire ni vous reconnecter.</p>
+        <div className="mt-4 grid gap-2">
+          <a href="/dashboard" className="rounded bg-ink px-4 py-3 text-center font-medium text-white dark:bg-coral">Ouvrir mon tableau de bord</a>
+          <a href="/learn" className="rounded border border-black/10 px-4 py-3 text-center text-sm dark:border-white/10">Continuer les cours</a>
+          <button type="button" className="rounded border border-black/10 px-4 py-3 text-sm dark:border-white/10" onClick={logout}>Me deconnecter</button>
+        </div>
+      </section>
+    );
   }
 
   return (
