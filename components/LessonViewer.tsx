@@ -9,7 +9,7 @@ import { pick } from "@/lib/i18n";
 import { playMoveSound } from "@/lib/sound";
 
 type ViewMode = "courses" | "lessons" | "player";
-type LessonStage = "theory" | "demo" | "exercise";
+type CourseStepKind = "theory" | "demo" | "quiz" | "exercise" | "mastery";
 
 const STORAGE_KEY = "chessmentor.completedLessons";
 
@@ -33,11 +33,11 @@ export function LessonViewer() {
   const [courseIndex, setCourseIndex] = useState(0);
   const [lessonIndex, setLessonIndex] = useState(0);
   const [step, setStep] = useState(0);
-  const [stage, setStage] = useState<LessonStage>("theory");
-  const [theoryStep, setTheoryStep] = useState(0);
+  const [courseStep, setCourseStep] = useState(0);
   const [railOpen, setRailOpen] = useState(true);
   const [quiz, setQuiz] = useState("");
   const [completed, setCompleted] = useState<Set<string>>(() => new Set());
+  const [viewport, setViewport] = useState({ width: 1280, height: 720 });
 
   const course = courses[courseIndex];
   const lessons = useMemo(() => courseLessons(courseIndex), [courseIndex]);
@@ -47,6 +47,10 @@ export function LessonViewer() {
   const completedCount = lessons.filter((item) => completed.has(lessonKey(courseIndex, item.slug))).length;
   const progress = lessons.length ? Math.round((completedCount / lessons.length) * 100) : 0;
   const stats = levelStats[courseIndex] ?? levelStats[0];
+  const boardSize = Math.max(
+    360,
+    Math.min(760, viewport.height - 210, viewport.width >= 1280 ? viewport.width - (railOpen ? 760 : 520) : viewport.width - 48)
+  );
 
   const fen = useMemo(() => {
     const chess = new Chess(content.startFen);
@@ -71,12 +75,21 @@ export function LessonViewer() {
     }
   }, [completed]);
 
+  useEffect(() => {
+    function syncViewport() {
+      setViewport({ width: window.innerWidth, height: window.innerHeight });
+    }
+
+    syncViewport();
+    window.addEventListener("resize", syncViewport);
+    return () => window.removeEventListener("resize", syncViewport);
+  }, []);
+
   function openCourse(nextCourseIndex: number) {
     setCourseIndex(nextCourseIndex);
     setLessonIndex(0);
     setStep(0);
-    setStage("theory");
-    setTheoryStep(0);
+    setCourseStep(0);
     setQuiz("");
     setMode("lessons");
   }
@@ -85,8 +98,7 @@ export function LessonViewer() {
     if (!isLessonAvailable(nextLessonIndex)) return;
     setLessonIndex(nextLessonIndex);
     setStep(0);
-    setStage("theory");
-    setTheoryStep(0);
+    setCourseStep(0);
     setQuiz("");
     setMode("player");
   }
@@ -114,11 +126,6 @@ export function LessonViewer() {
     if (step >= content.moves.length) return;
     playMoveSound("move");
     setStep(step + 1);
-  }
-
-  function changeStage(nextStage: LessonStage) {
-    setStage(nextStage);
-    if (nextStage === "theory") setTheoryStep(0);
   }
 
   function lessonStatus(index: number, done: boolean, locked: boolean) {
@@ -185,12 +192,6 @@ export function LessonViewer() {
     );
   }
 
-  const stageLabels: Record<LessonStage, string> = {
-    theory: "Theorie",
-    demo: "Demonstration",
-    exercise: "Exercice"
-  };
-
   const theoryCards = [
     ...content.theoryCards.map((item) => ({
       title: pick(item.title),
@@ -202,13 +203,21 @@ export function LessonViewer() {
     { title: "Critere de maitrise", body: content.mastery.map((item) => pick(item)), plan: content.mastery.map((item) => pick(item)).slice(0, 4) }
   ];
 
-  const currentTheoryCard = theoryCards[Math.min(theoryStep, theoryCards.length - 1)];
+  const courseSteps = [
+    ...theoryCards.map((card, index) => ({ kind: "theory" as const, title: card.title, body: card.body, plan: card.plan, label: `Notion ${index + 1}` })),
+    { kind: "demo" as const, title: "Exemple guide sur l'echiquier", body: pick(content.summary), plan: content.moves.map((move) => pick(move.note)), label: "Exemple" },
+    { kind: "quiz" as const, title: "Question de comprehension", body: pick(content.quiz.question), plan: content.checklist.map((item) => pick(item)).slice(0, 4), label: "Quiz" },
+    { kind: "exercise" as const, title: "Exercice interactif", body: `Trouve le coup cle : ${content.exercise.solution[0]}. Tu peux demander un indice, puis valider la lecon.`, plan: [pick(content.training.prompt), pick(content.training.target), pick(content.training.repeat)], label: "Exercice" },
+    { kind: "mastery" as const, title: "Criteres de maitrise", body: content.mastery.map((item) => pick(item)), plan: content.mastery.map((item) => pick(item)), label: "Maitrise" }
+  ];
+  const currentCourseStep = courseSteps[Math.min(courseStep, courseSteps.length - 1)];
+  const currentTheoryCard = currentCourseStep.kind === "theory" ? currentCourseStep : theoryCards[0];
   const planIllustration = (() => {
-    if (currentTheoryCard.plan.length > 0) {
+    if (currentCourseStep.plan.length > 0) {
       return {
-        title: currentTheoryCard.title,
-        accent: "Regarde le plateau avec cette idee en tete avant de passer a la suite.",
-        points: currentTheoryCard.plan
+        title: currentCourseStep.title,
+        accent: currentCourseStep.kind === "demo" ? "Observe comment l'echiquier illustre la notion avant de jouer." : currentCourseStep.kind === "exercise" ? "Joue le coup sur le plateau, puis valide la lecon." : "Regarde le plateau avec cette idee en tete avant de passer a la suite.",
+        points: currentCourseStep.plan
       };
     }
     if (currentTheoryCard.title === "Le but du jeu") {
@@ -272,6 +281,32 @@ export function LessonViewer() {
       ]
     };
   })();
+
+  function previousCourseStep() {
+    if (currentCourseStep.kind === "demo" && step > 0) {
+      setStep(Math.max(0, step - 1));
+      return;
+    }
+    setCourseStep(Math.max(0, courseStep - 1));
+    setQuiz("");
+  }
+
+  function nextCourseStep() {
+    if (currentCourseStep.kind === "demo" && step < content.moves.length) {
+      advanceStep();
+      return;
+    }
+    if (currentCourseStep.kind === "exercise" && !completed.has(currentKey)) {
+      markComplete();
+      return;
+    }
+    setCourseStep(Math.min(courseSteps.length - 1, courseStep + 1));
+    setStep(0);
+    setQuiz("");
+  }
+
+  const displayFen = currentCourseStep.kind === "demo" ? fen : content.startFen;
+  const displayArrows = currentCourseStep.kind === "demo" && step ? [[content.moves[step - 1].from, content.moves[step - 1].to, "rgb(215,109,87)"]] as [string, string, string?][] : [];
 
   if (mode === "courses") {
     const totalLessons = courses.reduce((sum, item) => sum + item.modules.flatMap((module) => module.lessons).length, 0);
@@ -405,177 +440,108 @@ export function LessonViewer() {
   }
 
   return (
-    <main className="mx-auto grid h-[calc(100svh-124px)] max-w-none overflow-hidden px-3 py-2 lg:h-[calc(100svh-64px)] lg:max-w-[1800px] lg:px-4">
-      {stage === "theory" ? (
-        <section className={`grid min-h-0 gap-3 overflow-hidden md:grid-cols-[minmax(0,1fr)_320px] ${railOpen ? "xl:grid-cols-[280px_minmax(0,1fr)_340px]" : "xl:grid-cols-[48px_minmax(0,1fr)_340px]"}`}>
-          {renderLessonRail()}
-          <article className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded border border-black/10 bg-white dark:border-white/10 dark:bg-white/5">
-            <div className="border-b border-black/10 p-3 dark:border-white/10">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <button className="flex items-center gap-2 rounded border border-black/10 px-3 py-2 text-sm dark:border-white/10" onClick={() => setMode("lessons")}>
-                  <ArrowLeft size={16} /> Niveau
-                </button>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  {(Object.keys(stageLabels) as LessonStage[]).map((item) => (
-                    <button
-                      key={item}
-                      className={`rounded border px-2 py-1.5 font-semibold ${stage === item ? "border-ink bg-ink text-white dark:border-coral dark:bg-coral" : "border-black/10 dark:border-white/10"}`}
-                      onClick={() => changeStage(item)}
-                    >
-                      {stageLabels[item]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="min-h-0 overflow-y-auto p-3">
-              <section className="grid h-full content-center gap-4 rounded bg-mint p-5 text-ink">
-                <div className="flex items-center justify-between gap-3 text-sm">
-                  <span className="font-semibold">Theorie {theoryStep + 1}/{theoryCards.length}</span>
-                  <div className="h-2 w-32 overflow-hidden rounded bg-ink/15"><div className="h-full bg-coral" style={{ width: `${((theoryStep + 1) / theoryCards.length) * 100}%` }} /></div>
-                </div>
-                <h2 className="text-3xl font-semibold">{currentTheoryCard.title}</h2>
-                {Array.isArray(currentTheoryCard.body) ? (
-                  <ul className="grid gap-3 text-base leading-relaxed">
-                    {currentTheoryCard.body.map((item) => <li key={item} className="rounded bg-white/70 p-3">- {item}</li>)}
-                  </ul>
-                ) : (
-                  <p className="max-w-4xl text-lg leading-relaxed">{currentTheoryCard.body}</p>
-                )}
-              </section>
-            </div>
-            <div className="grid grid-cols-3 gap-2 border-t border-black/10 p-3 dark:border-white/10">
-              <button className="rounded border px-3 py-2 text-sm" onClick={() => setTheoryStep(Math.max(0, theoryStep - 1))} disabled={theoryStep === 0}>Precedent</button>
-              <button className="rounded border px-3 py-2 text-sm" onClick={() => setMode("lessons")}>Retour</button>
-              <button className="flex items-center justify-center gap-2 rounded bg-ink px-3 py-2 text-sm text-white dark:bg-coral" onClick={() => theoryStep < theoryCards.length - 1 ? setTheoryStep(theoryStep + 1) : changeStage("demo")}>
-                {theoryStep < theoryCards.length - 1 ? "Suivant" : "Voir l'exemple"} <ChevronRight size={17} />
-              </button>
-            </div>
-          </article>
-
-          <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded border border-black/10 dark:border-white/10">
-            <div className="border-b border-black/10 p-3 dark:border-white/10">
-              <h2 className="flex items-center gap-2 font-semibold"><BookOpen size={17} /> {planIllustration.title}</h2>
-              <p className="mt-1 text-xs text-sage dark:text-mint">Carte {theoryStep + 1}/{theoryCards.length}</p>
-            </div>
-            <div className="grid min-h-0 grid-rows-[auto_auto_minmax(0,1fr)] gap-3 overflow-hidden p-3 text-sm">
-              <div className="mx-auto hidden w-full max-w-56 sm:block xl:max-w-full">
-                <ChessBoard fen={content.startFen} disabled />
-              </div>
-              <p className="rounded bg-coral/10 p-3 font-semibold">{planIllustration.accent}</p>
-              <ul className="grid content-start gap-2 overflow-y-auto">
-                {planIllustration.points.map((point) => (
-                  <li key={point} className="rounded border border-black/10 p-3 dark:border-white/10">{point}</li>
-                ))}
-              </ul>
-            </div>
-            <div className="border-t border-black/10 p-3 text-xs text-sage dark:border-white/10 dark:text-mint">
-              La lecon n&apos;est marquee terminee qu&apos;apres l&apos;exercice.
-            </div>
-          </aside>
-        </section>
-      ) : (
-      <section className={`grid min-h-0 gap-3 overflow-hidden md:grid-cols-[minmax(260px,1fr)_minmax(280px,360px)] ${railOpen ? "xl:grid-cols-[280px_minmax(420px,1fr)_380px]" : "xl:grid-cols-[48px_minmax(420px,1fr)_380px]"}`}>
+    <main className="mx-auto grid h-[calc(100svh-124px)] max-w-none overflow-hidden px-3 py-2 lg:h-[calc(100svh-64px)] lg:max-w-[1900px] lg:px-4">
+      <section className={`grid min-h-0 gap-3 overflow-hidden ${railOpen ? "xl:grid-cols-[280px_minmax(520px,1fr)_420px]" : "xl:grid-cols-[48px_minmax(520px,1fr)_420px]"}`}>
         {renderLessonRail()}
-        <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-2 overflow-hidden">
-          <div className="mx-auto grid min-h-0 w-full max-w-[min(48svh,440px)] place-items-center overflow-hidden sm:max-w-[min(54svh,520px)] lg:max-w-[min(62svh,600px)]">
-            <ChessBoard fen={fen} arrows={step ? [[content.moves[step - 1].from, content.moves[step - 1].to, "rgb(215,109,87)"]] : []} />
+
+        <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded border border-black/10 bg-white dark:border-white/10 dark:bg-white/5">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-black/10 p-3 dark:border-white/10">
+            <button className="flex items-center gap-2 rounded border border-black/10 px-3 py-2 text-sm dark:border-white/10" onClick={() => setMode("lessons")}>
+              <ArrowLeft size={16} /> Niveau
+            </button>
+            <div className="min-w-0 flex-1 text-center">
+              <p className="text-xs font-semibold uppercase text-coral">Lecon {lessonIndex + 1}/{lessons.length} - {currentCourseStep.label}</p>
+              <h1 className="truncate text-lg font-semibold">{pick(lesson.title)}</h1>
+            </div>
+            {completed.has(currentKey) && <span className="inline-flex items-center gap-2 rounded bg-ink px-2 py-1 text-xs text-white dark:bg-coral"><CheckCircle2 size={15} /> Terminee</span>}
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <button className="flex min-h-10 items-center justify-center gap-1 rounded border px-2 py-2 text-sm" onClick={() => setStep(Math.max(0, step - 1))}><ArrowLeft size={16} /> Reculer</button>
-            <button className="flex min-h-10 items-center justify-center gap-1 rounded border px-2 py-2 text-sm" onClick={() => setStep(0)}><RotateCcw size={16} /> Rejouer</button>
-            <button className="flex min-h-10 items-center justify-center gap-1 rounded bg-ink px-2 py-2 text-sm text-white dark:bg-coral" onClick={advanceStep}>Avancer <ChevronRight size={16} /></button>
+
+          <div className="grid min-h-0 place-items-center overflow-hidden p-2">
+            <ChessBoard fen={displayFen} arrows={displayArrows} boardWidth={boardSize} disabled={currentCourseStep.kind !== "exercise"} />
+          </div>
+
+          <div className="grid grid-cols-4 gap-2 border-t border-black/10 p-2 dark:border-white/10">
+            <button className="flex min-h-10 items-center justify-center gap-1 rounded border px-2 py-2 text-sm" onClick={previousCourseStep} disabled={courseStep === 0 && step === 0}>
+              <ArrowLeft size={16} /> Precedent
+            </button>
+            <button className="flex min-h-10 items-center justify-center gap-1 rounded border px-2 py-2 text-sm" onClick={() => { setStep(0); setCourseStep(0); setQuiz(""); }}>
+              <RotateCcw size={16} /> Reprendre
+            </button>
+            <button className="flex min-h-10 items-center justify-center gap-1 rounded border px-2 py-2 text-sm" onClick={() => setQuiz(`Indice : joue ${content.exercise.solution[0]}`)}>
+              <Lightbulb size={16} /> Indice
+            </button>
+            <button className="flex min-h-10 items-center justify-center gap-1 rounded bg-ink px-2 py-2 text-sm text-white dark:bg-coral" onClick={nextCourseStep}>
+              {currentCourseStep.kind === "exercise" && !completed.has(currentKey) ? "Valider" : "Avancer"} <ChevronRight size={16} />
+            </button>
           </div>
         </div>
 
-        <aside className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] overflow-hidden rounded border border-black/10 dark:border-white/10">
-          <div className="min-h-0 overflow-y-auto p-3">
-            <div className="grid gap-2 text-sm">
-              <div className="grid gap-2 border-b border-black/10 pb-2 dark:border-white/10">
-                <div className="flex items-center justify-between gap-2">
-                  <button className="flex items-center gap-2 rounded border border-black/10 px-3 py-2 text-sm dark:border-white/10" onClick={() => setMode("lessons")}>
-                    <ArrowLeft size={16} /> Niveau
-                  </button>
-                  {completed.has(currentKey) && <span className="inline-flex items-center gap-2 rounded bg-ink px-2 py-1 text-xs text-white dark:bg-coral"><CheckCircle2 size={15} /> Terminee</span>}
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  {(Object.keys(stageLabels) as LessonStage[]).map((item) => (
-                    <button
-                      key={item}
-                      className={`rounded border px-2 py-1.5 font-semibold ${stage === item ? "border-ink bg-ink text-white dark:border-coral dark:bg-coral" : "border-black/10 dark:border-white/10"}`}
-                      onClick={() => changeStage(item)}
-                    >
-                      {stageLabels[item]}
-                    </button>
-                  ))}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase text-coral">Lecon {lessonIndex + 1}/{lessons.length}</p>
-                  <h1 className="truncate text-lg font-semibold">{pick(lesson.title)}</h1>
-                </div>
-              </div>
-              <p>{pick(content.summary)}</p>
-              <p className="rounded bg-coral/10 p-2">{step ? pick(content.moves[step - 1].note) : "Avancez coup par coup pour voir l'explication."}</p>
-              <section className="rounded border border-black/10 p-2 dark:border-white/10">
-                <h2 className="flex items-center gap-2 font-semibold"><Target size={17} /> Methode</h2>
-                <p className="mt-2 text-sage dark:text-mint">{pick(content.method)}</p>
-              </section>
-              <section className="rounded border border-black/10 p-2 dark:border-white/10">
-                <h2 className="flex items-center gap-2 font-semibold"><ListChecks size={17} /> Checklist</h2>
-                <ul className="mt-2 grid gap-1 text-sage dark:text-mint">
-                  {content.checklist.map((item) => <li key={pick(item)}>- {pick(item)}</li>)}
-                </ul>
-              </section>
-              <p className="text-sage dark:text-mint">{pick(content.mistake)}</p>
-              <section className="rounded border p-2 dark:border-white/10">
-                <h2 className="flex items-center gap-2 font-semibold"><HelpCircle size={17} /> Question</h2>
-                <p className="mt-2">{pick(content.quiz.question)}</p>
-                <div className="mt-2 grid gap-2">
-                  {content.quiz.answers.map((answer) => (
-                    <button key={pick(answer.text)} className="rounded border px-3 py-2 text-left" onClick={() => setQuiz(answer.correct ? "Correct." : "Essaie encore.")}>{pick(answer.text)}</button>
-                  ))}
-                </div>
-                {quiz && <p className="mt-2 text-coral">{quiz}</p>}
-              </section>
-              <section className="rounded bg-mint p-2 text-ink">
-                <h2 className="font-semibold">Entrainement cible</h2>
-                <p className="mt-2">{pick(content.training.prompt)}</p>
-                <p className="mt-2">{pick(content.training.target)}</p>
-              </section>
-              <details className="rounded border border-black/10 p-2 dark:border-white/10">
-                <summary className="cursor-pointer font-semibold">Criteres de maitrise</summary>
-                <ul className="mt-2 grid gap-1 text-sage dark:text-mint">
-                  {content.mastery.map((item) => <li key={pick(item)}>- {pick(item)}</li>)}
-                </ul>
-              </details>
+        <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded border border-black/10 bg-white dark:border-white/10 dark:bg-white/5">
+          <div className="border-b border-black/10 p-3 dark:border-white/10">
+            <div className="mb-2 flex items-center justify-between gap-3 text-xs">
+              <span className="font-semibold uppercase text-coral">{currentCourseStep.label}</span>
+              <span>{courseStep + 1}/{courseSteps.length}</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded bg-black/10 dark:bg-white/10">
+              <div className="h-full bg-coral" style={{ width: `${((courseStep + 1) / courseSteps.length) * 100}%` }} />
             </div>
           </div>
 
-          <div className="grid gap-2 border-t border-black/10 p-2 dark:border-white/10">
-            <div className="grid grid-cols-2 gap-2">
-              <button className="flex min-h-10 items-center justify-center gap-2 rounded border px-3 py-2 text-sm" onClick={() => setQuiz(`Indice : joue ${content.exercise.solution[0]}`)}><Lightbulb size={17} /> Indice</button>
-              <button className="flex min-h-10 items-center justify-center gap-2 rounded bg-coral px-3 py-2 text-sm text-white" onClick={markComplete} disabled={completed.has(currentKey) || stage !== "exercise"}>
-                <Trophy size={17} /> {completed.has(currentKey) ? "Terminee" : "Valider"}
-              </button>
-            </div>
-            {stage === "demo" && (
-              <button className="flex min-h-10 items-center justify-center gap-2 rounded bg-ink px-3 py-2 text-sm text-white dark:bg-coral" onClick={() => changeStage("exercise")}>
-                Passer a l&apos;exercice <ChevronRight size={17} />
-              </button>
-            )}
-            {completed.has(currentKey) && lessonIndex < lessons.length - 1 && (
+          <div className="min-h-0 overflow-y-auto p-4">
+            <article className="grid content-start gap-4">
+              <h2 className="flex items-center gap-2 text-2xl font-semibold"><BookOpen size={22} /> {currentCourseStep.title}</h2>
+              {Array.isArray(currentCourseStep.body) ? (
+                <ul className="grid gap-2 text-sm leading-relaxed">
+                  {currentCourseStep.body.map((item) => <li key={item} className="rounded border border-black/10 p-3 dark:border-white/10">{item}</li>)}
+                </ul>
+              ) : (
+                <p className="text-base leading-relaxed text-sage dark:text-mint">{currentCourseStep.body}</p>
+              )}
+
+              {currentCourseStep.kind === "demo" && (
+                <p className="rounded bg-coral/10 p-3 font-semibold">{step ? pick(content.moves[step - 1].note) : "Appuie sur Avancer pour jouer l'exemple coup par coup sur le grand echiquier."}</p>
+              )}
+
+              {currentCourseStep.kind === "quiz" && (
+                <section className="grid gap-2">
+                  {content.quiz.answers.map((answer) => (
+                    <button key={pick(answer.text)} className="rounded border px-3 py-2 text-left" onClick={() => setQuiz(answer.correct ? "Correct." : "Essaie encore.")}>{pick(answer.text)}</button>
+                  ))}
+                  {quiz && <p className="text-coral">{quiz}</p>}
+                </section>
+              )}
+
+              {currentCourseStep.kind === "exercise" && (
+                <section className="rounded bg-mint p-3 text-ink">
+                  <h3 className="font-semibold">A toi de jouer</h3>
+                  <p className="mt-2">{pick(content.training.prompt)}</p>
+                  <p className="mt-2">{quiz || "Joue le coup sur le grand echiquier ou demande un indice."}</p>
+                </section>
+              )}
+
+              <section className="grid gap-2">
+                <h3 className="flex items-center gap-2 font-semibold"><ListChecks size={17} /> Plan de travail</h3>
+                <p className="rounded bg-coral/10 p-3 font-semibold">{planIllustration.accent}</p>
+                <ul className="grid gap-2 text-sm">
+                  {planIllustration.points.map((point) => (
+                    <li key={point} className="rounded border border-black/10 p-3 dark:border-white/10">{point}</li>
+                  ))}
+                </ul>
+              </section>
+            </article>
+          </div>
+
+          <div className="grid gap-2 border-t border-black/10 p-3 text-xs text-sage dark:border-white/10 dark:text-mint">
+            {completed.has(currentKey) && lessonIndex < lessons.length - 1 ? (
               <button className="flex min-h-10 items-center justify-center gap-2 rounded bg-ink px-3 py-2 text-sm text-white dark:bg-coral" onClick={nextLesson}>
                 Lecon suivante <ChevronRight size={17} />
               </button>
+            ) : (
+              <span className="rounded border p-2 dark:border-white/10"><Clock3 size={14} /> Parcours unique : notion, exemple, question, exercice, maitrise.</span>
             )}
-            <div className="grid grid-cols-2 gap-2 text-xs text-sage dark:text-mint">
-              <span className="rounded border p-2 dark:border-white/10"><Clock3 size={14} /> 3-7 min</span>
-              <span className="rounded border p-2 dark:border-white/10">Solution {stats.solutions}</span>
-            </div>
           </div>
         </aside>
       </section>
-      )}
     </main>
   );
 }
