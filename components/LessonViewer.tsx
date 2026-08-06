@@ -6,6 +6,7 @@ import { ArrowLeft, BookOpen, CheckCircle2, ChevronRight, Circle, Clock3, HelpCi
 import { ChessBoard } from "@/components/ChessBoard";
 import { courses } from "@/data/content";
 import { pick } from "@/lib/i18n";
+import { playMoveSound } from "@/lib/sound";
 
 type ViewMode = "courses" | "lessons" | "player";
 type LessonStage = "theory" | "demo" | "exercise";
@@ -103,6 +104,12 @@ export function LessonViewer() {
   function nextLesson() {
     const next = Math.min(lessonIndex + 1, lessons.length - 1);
     if (next !== lessonIndex) openLesson(next);
+  }
+
+  function advanceStep() {
+    if (step >= content.moves.length) return;
+    playMoveSound("move");
+    setStep(step + 1);
   }
 
   const stageLabels: Record<LessonStage, string> = {
@@ -325,7 +332,7 @@ export function LessonViewer() {
           <div className="grid grid-cols-3 gap-2">
             <button className="flex min-h-10 items-center justify-center gap-1 rounded border px-2 py-2 text-sm" onClick={() => setStep(Math.max(0, step - 1))}><ArrowLeft size={16} /> Reculer</button>
             <button className="flex min-h-10 items-center justify-center gap-1 rounded border px-2 py-2 text-sm" onClick={() => setStep(0)}><RotateCcw size={16} /> Rejouer</button>
-            <button className="flex min-h-10 items-center justify-center gap-1 rounded bg-ink px-2 py-2 text-sm text-white dark:bg-coral" onClick={() => setStep(Math.min(content.moves.length, step + 1))}>Avancer <ChevronRight size={16} /></button>
+            <button className="flex min-h-10 items-center justify-center gap-1 rounded bg-ink px-2 py-2 text-sm text-white dark:bg-coral" onClick={advanceStep}>Avancer <ChevronRight size={16} /></button>
           </div>
         </div>
 

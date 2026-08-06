@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { Chess } from "chess.js";
 import { ChessBoard } from "@/components/ChessBoard";
 import { chooseComputerMove, coachHints } from "@/lib/chess";
+import { playMoveSound } from "@/lib/sound";
 import { Brain, CalendarPlus, Clock, ShieldCheck, Sparkles, Users } from "lucide-react";
 
 export function PlayComputer() {
@@ -49,7 +50,10 @@ export function PlayComputer() {
     replyTimer.current = window.setTimeout(() => {
       const next = new Chess(fen);
       const computer = chooseComputerMove(next.fen(), difficulty);
-      if (computer) next.move(computer.san);
+      if (computer) {
+        const played = next.move(computer.san);
+        playMoveSound(played?.captured ? "capture" : "move");
+      }
       update(next);
       setThinking(false);
       const hint = coachHints(next.fen());

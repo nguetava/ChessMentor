@@ -164,7 +164,7 @@ export default function HomePage() {
       <footer className="mx-auto grid max-w-7xl gap-4 px-4 py-8 text-sm text-sage md:grid-cols-[1fr_auto]">
         <div>
           <span className="font-semibold text-ink dark:text-paper">ChessMentor</span>
-          <p className="mt-2 max-w-2xl">Cours d&apos;echecs, jouer aux echecs, defi tactique, tableau logique, progression et analyse. Francais par defaut, allemand et anglais disponibles.</p>
+          <p className="mt-2 max-w-2xl">Cours d&apos;echecs, jouer aux echecs, defi tactique, tableau logique, progression et analyse. Interface en francais pour le moment.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Link href="/profile">Mon compte</Link>

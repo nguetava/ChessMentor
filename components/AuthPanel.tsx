@@ -95,9 +95,7 @@ export function AuthPanel() {
         {mode === "register" && (
           <>
             <label className="grid gap-1 text-sm">Pseudo<input name="displayName" required className="rounded border p-3 text-ink" /></label>
-            <label className="grid gap-1 text-sm">Langue
-              <select name="locale" className="rounded border p-3 text-ink"><option value="fr">Francais</option><option value="de">Deutsch</option><option value="en">English</option></select>
-            </label>
+            <input type="hidden" name="locale" value="fr" />
             <label className="grid gap-1 text-sm">Niveau
               <select name="chessLevel" className="rounded border p-3 text-ink">
                 {levels.map((level) => <option key={level.key} value={level.key}>{level.label.fr}</option>)}

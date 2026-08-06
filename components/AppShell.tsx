@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, Brain, ChartNoAxesColumnIncreasing, Home, Languages, LogOut, Moon, Shield, Sun, User, Zap } from "lucide-react";
+import { BookOpen, Brain, ChartNoAxesColumnIncreasing, Home, LogOut, Moon, Shield, Sun, User, Zap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { dictionaries, normalizeLocale } from "@/lib/i18n";
-import type { Locale } from "@/data/content";
+import { dictionaries } from "@/lib/i18n";
 
 const navItems = [
   ["/", "home", Home],
@@ -25,13 +24,12 @@ type SessionUser = {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [locale, setLocale] = useState<Locale>("fr");
   const [dark, setDark] = useState(false);
   const [user, setUser] = useState<SessionUser | null | undefined>(undefined);
-  const dict = dictionaries[locale];
+  const dict = dictionaries.fr;
 
   useEffect(() => {
-    setLocale(normalizeLocale(localStorage.getItem("locale")));
+    localStorage.setItem("locale", "fr");
     setDark(localStorage.getItem("theme") === "dark");
   }, []);
 
@@ -58,12 +56,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   const active = useMemo(() => pathname || "/", [pathname]);
-
-  function changeLocale(value: Locale) {
-    setLocale(value);
-    localStorage.setItem("locale", value);
-    router.refresh();
-  }
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -94,15 +86,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
           </div>
-          <label className="ml-auto flex items-center gap-2 rounded border border-black/10 px-2 py-1 text-sm dark:border-white/10">
-            <Languages size={16} aria-hidden />
-            <span className="sr-only">Langue</span>
-            <select value={locale} onChange={(event) => changeLocale(event.target.value as Locale)} className="bg-transparent">
-              <option value="fr">FR</option>
-              <option value="de">DE</option>
-              <option value="en">EN</option>
-            </select>
-          </label>
+          <div className="ml-auto" />
           <button onClick={() => setDark((value) => !value)} className="grid h-9 w-9 place-items-center rounded border border-black/10 dark:border-white/10" aria-label="Changer de theme">
             {dark ? <Sun size={18} /> : <Moon size={18} />}
           </button>

@@ -4,7 +4,7 @@ export const registerSchema = z.object({
   displayName: z.string().min(2).max(40),
   email: z.string().email(),
   password: z.string().min(8),
-  locale: z.enum(["fr", "de", "en"]).default("fr"),
+  locale: z.literal("fr").default("fr"),
   chessLevel: z.enum(["NO_RULES", "BEGINNER", "INTERMEDIATE", "ADVANCED"]).default("NO_RULES")
 });
 

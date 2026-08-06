@@ -3,6 +3,7 @@
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import { useEffect, useMemo, useState } from "react";
+import { playMoveSound } from "@/lib/sound";
 
 export function ChessBoard({
   fen,
@@ -40,6 +41,7 @@ export function ChessBoard({
     const chess = new Chess(displayFen);
     const result = chess.move({ from, to, promotion: "q" });
     if (!result) return false;
+    playMoveSound(result.captured ? "capture" : "move");
     if (onMove) onMove(from, to, result.san, chess.fen());
     else setLocalFen(chess.fen());
     setSelected(null);

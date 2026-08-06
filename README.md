@@ -6,9 +6,9 @@ ChessMentor est un MVP Next.js/React/TypeScript pour apprendre les echecs avec c
 
 - `app/` : pages App Router et routes API.
 - `components/` : interface, echiquier, lecons, exercices, partie et analyse.
-- `data/` : contenu initial multilingue et positions FEN.
+- `data/` : contenu initial des cours et positions FEN.
 - `lib/` : Prisma, auth, moteur d'echecs, progression, traductions.
-- `messages/` : fichiers FR/DE/EN.
+- `messages/` : fichier de navigation en francais.
 - `prisma/` : schema PostgreSQL et seed.
 - `tests/` : tests Vitest de la logique d'echecs et de progression.
 
@@ -45,6 +45,6 @@ npm run build
 - Partie contre ordinateur en trois niveaux, avec mode entrainement et assistance.
 - Sauvegarde des parties et analyse pedagogique simple.
 - Prisma/PostgreSQL avec modeles principaux demandes.
-- Fichiers de traduction FR, DE et EN.
+- Interface limitee au francais pour le moment.
 
 La connexion Google est preparee par variables d'environnement, mais l'activation complete necessite d'ajouter un fournisseur OAuth dans la couche auth.

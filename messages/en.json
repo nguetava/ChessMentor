@@ -1,4 +1,0 @@
-{
-  "nav": { "home": "Home", "dashboard": "Dashboard", "learn": "Courses", "practice": "Practice", "play": "Play", "profile": "Profile", "admin": "Admin" },
-  "home": { "title": "Learn chess, one move at a time", "start": "Start free", "courses": "Explore courses" }
-}

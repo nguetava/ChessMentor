@@ -1,9 +1,7 @@
 import fr from "@/messages/fr.json";
-import de from "@/messages/de.json";
-import en from "@/messages/en.json";
 import type { Locale, TText } from "@/data/content";
 
-export const dictionaries = { fr, de, en };
+export const dictionaries = { fr };
 
 export function pick<T extends TText | undefined>(text: T, locale: Locale = "fr") {
   if (!text) return "";
@@ -11,5 +9,5 @@ export function pick<T extends TText | undefined>(text: T, locale: Locale = "fr"
 }
 
 export function normalizeLocale(value: unknown): Locale {
-  return value === "de" || value === "en" ? value : "fr";
+  return "fr";
 }
