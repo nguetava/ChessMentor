@@ -112,6 +112,54 @@ export function LessonViewer() {
     setStep(step + 1);
   }
 
+  function lessonStatus(index: number, done: boolean, locked: boolean) {
+    if (done) return "Terminee";
+    if (locked) return "Bloquee";
+    if (index === lessonIndex && mode === "player") return "En cours";
+    return "Disponible";
+  }
+
+  function renderLessonRail() {
+    return (
+      <aside className="hidden min-h-0 overflow-hidden rounded border border-black/10 bg-white dark:border-white/10 dark:bg-white/5 xl:grid xl:grid-rows-[auto_minmax(0,1fr)]">
+        <div className="border-b border-black/10 p-3 dark:border-white/10">
+          <p className="text-xs font-semibold uppercase text-coral">Parcours</p>
+          <h2 className="truncate font-semibold">{pick(course.title)}</h2>
+          <div className="mt-2 h-2 overflow-hidden rounded bg-black/10 dark:bg-white/10"><div className="h-full bg-coral" style={{ width: `${progress}%` }} /></div>
+        </div>
+        <div className="min-h-0 overflow-y-auto p-2">
+          {lessons.map((item, index) => {
+            const key = lessonKey(courseIndex, item.slug);
+            const done = completed.has(key);
+            const locked = !isLessonAvailable(index) && !done;
+            return (
+              <button
+                key={item.slug}
+                disabled={locked}
+                onClick={() => openLesson(index)}
+                className={`mb-2 grid w-full grid-cols-[34px_1fr] gap-2 rounded border p-2 text-left text-xs transition ${
+                  index === lessonIndex
+                    ? "border-coral bg-coral/10"
+                    : done
+                      ? "border-ink bg-ink text-white dark:border-coral dark:bg-coral"
+                      : locked
+                        ? "border-black/10 opacity-50 dark:border-white/10"
+                        : "border-black/10 hover:bg-mint/60 dark:border-white/10 dark:hover:bg-white/10"
+                }`}
+              >
+                <span className="grid h-7 w-7 place-items-center rounded border border-current/20 font-semibold">{index + 1}</span>
+                <span className="min-w-0">
+                  <strong className="block truncate">{pick(item.title)}</strong>
+                  <span className="text-sage dark:text-mint">{lessonStatus(index, done, locked)}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </aside>
+    );
+  }
+
   const stageLabels: Record<LessonStage, string> = {
     theory: "Theorie",
     demo: "Demonstration",
@@ -173,35 +221,40 @@ export function LessonViewer() {
 
   if (mode === "lessons") {
     return (
-      <main className="mx-auto grid max-w-6xl gap-6 px-4 py-8">
-        <header className="grid gap-4 border-b border-black/10 pb-6 dark:border-white/10">
-          <button className="flex w-fit items-center gap-2 rounded border border-black/10 px-3 py-2 text-sm dark:border-white/10" onClick={() => setMode("courses")}>
-            <ArrowLeft size={16} /> Tous les niveaux
-          </button>
-          <div className="grid gap-3 lg:grid-cols-[1fr_260px] lg:items-end">
+      <main className="mx-auto grid h-[calc(100svh-124px)] max-w-none grid-rows-[auto_minmax(0,1fr)] gap-3 overflow-hidden px-3 py-3 lg:h-[calc(100svh-64px)] lg:px-5">
+        <header className="grid gap-3 border-b border-black/10 pb-3 dark:border-white/10">
+          <div className="flex flex-wrap items-center gap-2">
+            <button className="flex w-fit items-center gap-2 rounded border border-black/10 px-3 py-2 text-sm dark:border-white/10" onClick={() => setMode("courses")}>
+              <ArrowLeft size={16} /> Tous les niveaux
+            </button>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="inline-flex items-center gap-1 rounded bg-mint px-2 py-1 text-ink"><PlayCircle size={14} /> Disponible</span>
+              <span className="inline-flex items-center gap-1 rounded bg-coral/10 px-2 py-1"><Circle size={14} /> En cours</span>
+              <span className="inline-flex items-center gap-1 rounded border border-black/10 px-2 py-1 dark:border-white/10"><Lock size={14} /> Bloquee</span>
+              <span className="inline-flex items-center gap-1 rounded bg-ink px-2 py-1 text-white dark:bg-coral"><CheckCircle2 size={14} /> Terminee</span>
+            </div>
+          </div>
+          <div className="grid gap-3 lg:grid-cols-[1fr_520px] lg:items-end">
             <div>
               <p className="text-sm font-semibold uppercase text-coral">Niveau {course.level}</p>
-              <h1 className="text-3xl font-semibold">{pick(course.title)}</h1>
-              <p className="mt-2 max-w-3xl text-sage dark:text-mint">{pick(course.description)}</p>
+              <h1 className="text-2xl font-semibold lg:text-3xl">{pick(course.title)}</h1>
+              <p className="mt-1 max-w-4xl text-sm text-sage dark:text-mint">{pick(course.description)}</p>
             </div>
-            <div className="rounded border border-black/10 p-4 dark:border-white/10">
-              <div className="mb-1 flex justify-between text-sm"><span>Progres</span><strong>{progress}%</strong></div>
-              <div className="h-2 overflow-hidden rounded bg-black/10 dark:bg-white/10"><div className="h-full bg-coral" style={{ width: `${progress}%` }} /></div>
-              <p className="mt-2 text-sm text-sage dark:text-mint">{completedCount}/{lessons.length} lecons terminees</p>
+            <div className="grid gap-2 text-sm sm:grid-cols-4">
+              <div className="rounded border border-black/10 p-3 dark:border-white/10"><span className="text-sage dark:text-mint">Progres</span><strong className="block text-lg">{progress}%</strong></div>
+              <div className="rounded border border-black/10 p-3 dark:border-white/10"><span className="text-sage dark:text-mint">Terminees</span><strong className="block text-lg">{completedCount}/{lessons.length}</strong></div>
+              <div className="rounded border border-black/10 p-3 dark:border-white/10"><span className="text-sage dark:text-mint">Erreurs</span><strong className="block text-lg">{stats.wrong}</strong></div>
+              <div className="rounded border border-black/10 p-3 dark:border-white/10"><span className="text-sage dark:text-mint">Conseils</span><strong className="block text-lg">{stats.hints}</strong></div>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2 text-sm">
-            <span className="inline-flex items-center gap-1 rounded bg-mint px-3 py-1 text-ink"><PlayCircle size={15} /> Disponible</span>
-            <span className="inline-flex items-center gap-1 rounded bg-coral/10 px-3 py-1"><Circle size={15} /> En cours</span>
-            <span className="inline-flex items-center gap-1 rounded border border-black/10 px-3 py-1 dark:border-white/10"><Lock size={15} /> Bloque</span>
-            <span className="inline-flex items-center gap-1 rounded bg-ink px-3 py-1 text-white dark:bg-coral"><CheckCircle2 size={15} /> Terminee</span>
-          </div>
+          <div className="h-2 overflow-hidden rounded bg-black/10 dark:bg-white/10"><div className="h-full bg-coral" style={{ width: `${progress}%` }} /></div>
         </header>
 
-        <section className="grid gap-6">
+        <section className="min-h-0 overflow-y-auto pr-1">
+          <div className="grid gap-4 xl:grid-cols-2">
           {course.modules.map((module, moduleIndex) => (
-            <div key={pick(module.title)} className="grid gap-3">
-              <h2 className="rounded bg-mint px-4 py-3 text-lg font-semibold text-ink">{pick(module.title)}</h2>
+            <div key={pick(module.title)} className="grid content-start gap-2">
+              <h2 className="rounded bg-mint px-3 py-2 text-base font-semibold text-ink">{pick(module.title)}</h2>
               {module.lessons.map((item, lessonInModuleIndex) => {
                 const index = lessonGlobalIndex(moduleIndex, lessonInModuleIndex);
                 const key = lessonKey(courseIndex, item.slug);
@@ -210,15 +263,15 @@ export function LessonViewer() {
                 const locked = !available && !done;
 
                 return (
-                  <article key={item.slug} className={`grid gap-4 rounded border p-4 ${done ? "border-ink bg-ink text-white dark:border-coral dark:bg-coral" : locked ? "border-black/10 opacity-60 dark:border-white/10" : "border-coral bg-coral/5"}`}>
-                    <div className="grid gap-3 lg:grid-cols-[44px_1fr_180px] lg:items-center">
-                      <div className="flex h-11 w-11 items-center justify-center rounded border border-current/20 text-lg font-semibold">{index + 1}</div>
+                  <article key={item.slug} className={`grid gap-2 rounded border p-3 ${done ? "border-ink bg-ink text-white dark:border-coral dark:bg-coral" : locked ? "border-black/10 opacity-60 dark:border-white/10" : "border-coral bg-coral/5"}`}>
+                    <div className="grid gap-3 lg:grid-cols-[40px_1fr_148px] lg:items-center">
+                      <div className="flex h-10 w-10 items-center justify-center rounded border border-current/20 text-base font-semibold">{index + 1}</div>
                       <div>
-                        <h3 className="text-xl font-semibold">{pick(item.title)}</h3>
+                        <h3 className="text-base font-semibold lg:text-lg">{pick(item.title)}</h3>
                         <p className={`mt-1 text-sm ${done ? "text-white/80" : "text-sage dark:text-mint"}`}>{pick(item.objective)}</p>
                       </div>
                       <button
-                        className={`flex items-center justify-center gap-2 rounded px-4 py-3 text-sm ${locked ? "border border-current/20" : done ? "bg-white text-ink" : "bg-ink text-white dark:bg-coral"}`}
+                        className={`flex items-center justify-center gap-2 rounded px-3 py-2 text-sm ${locked ? "border border-current/20" : done ? "bg-white text-ink" : "bg-ink text-white dark:bg-coral"}`}
                         disabled={locked}
                         onClick={() => openLesson(index)}
                       >
@@ -226,7 +279,7 @@ export function LessonViewer() {
                         {locked ? "Bloque" : done ? "Revoir" : index === 0 ? "Commencer" : "Continuer"}
                       </button>
                     </div>
-                    <dl className={`grid gap-2 text-sm sm:grid-cols-5 ${done ? "text-white/80" : "text-sage dark:text-mint"}`}>
+                    <dl className={`grid gap-2 text-xs sm:grid-cols-5 ${done ? "text-white/80" : "text-sage dark:text-mint"}`}>
                       <div><dt>Statut</dt><dd>{done ? "Terminee" : locked ? "Terminez la lecon precedente" : "Vous pouvez commencer"}</dd></div>
                       <div><dt>Recommencee</dt><dd>0 x</dd></div>
                       <div><dt>Temps utilise</dt><dd>{index === 0 ? stats.time : "-"}</dd></div>
@@ -238,6 +291,7 @@ export function LessonViewer() {
               })}
             </div>
           ))}
+          </div>
         </section>
       </main>
     );
@@ -271,7 +325,8 @@ export function LessonViewer() {
       </header>
 
       {stage === "theory" ? (
-        <section className="grid min-h-0 gap-3 overflow-hidden md:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="grid min-h-0 gap-3 overflow-hidden md:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[280px_minmax(0,1fr)_340px]">
+          {renderLessonRail()}
           <article className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded border border-black/10 bg-white dark:border-white/10 dark:bg-white/5">
             <div className="border-b border-black/10 p-3 dark:border-white/10">
               <p className="text-xs font-semibold uppercase text-coral">Avant de toucher aux pieces</p>
@@ -311,8 +366,11 @@ export function LessonViewer() {
             <div className="border-b border-black/10 p-3 dark:border-white/10">
               <h2 className="flex items-center gap-2 font-semibold"><BookOpen size={17} /> Plan de travail</h2>
             </div>
-            <div className="min-h-0 overflow-y-auto p-3 text-sm">
-              <ol className="grid gap-2">
+            <div className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)] gap-3 overflow-hidden p-3 text-sm">
+              <div className="mx-auto hidden w-full max-w-56 sm:block xl:max-w-full">
+                <ChessBoard fen={content.startFen} disabled />
+              </div>
+              <ol className="grid content-start gap-2 overflow-y-auto">
                 <li className="rounded bg-ink p-3 text-white dark:bg-coral"><strong>1. Theorie</strong><br />Comprendre le principe avec des mots simples.</li>
                 <li className="rounded border border-black/10 p-3 dark:border-white/10"><strong>2. Demonstration</strong><br />Observer le coup cle sur l&apos;echiquier.</li>
                 <li className="rounded border border-black/10 p-3 dark:border-white/10"><strong>3. Exercice</strong><br />Repondre, demander un indice si besoin, puis valider.</li>
@@ -324,7 +382,8 @@ export function LessonViewer() {
           </aside>
         </section>
       ) : (
-      <section className="grid min-h-0 gap-3 overflow-hidden md:grid-cols-[minmax(260px,1fr)_minmax(280px,360px)] xl:grid-cols-[minmax(420px,1fr)_390px]">
+      <section className="grid min-h-0 gap-3 overflow-hidden md:grid-cols-[minmax(260px,1fr)_minmax(280px,360px)] xl:grid-cols-[280px_minmax(420px,1fr)_380px]">
+        {renderLessonRail()}
         <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-2 overflow-hidden">
           <div className="mx-auto grid min-h-0 w-full max-w-[min(48svh,440px)] place-items-center overflow-hidden sm:max-w-[min(54svh,520px)] lg:max-w-[min(62svh,600px)]">
             <ChessBoard fen={fen} arrows={step ? [[content.moves[step - 1].from, content.moves[step - 1].to, "rgb(215,109,87)"]] : []} />
