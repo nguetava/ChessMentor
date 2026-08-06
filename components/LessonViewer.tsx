@@ -8,6 +8,7 @@ import { courses } from "@/data/content";
 import { pick } from "@/lib/i18n";
 
 type ViewMode = "courses" | "lessons" | "player";
+type LessonStage = "theory" | "demo" | "exercise";
 
 const STORAGE_KEY = "chessmentor.completedLessons";
 
@@ -31,6 +32,7 @@ export function LessonViewer() {
   const [courseIndex, setCourseIndex] = useState(0);
   const [lessonIndex, setLessonIndex] = useState(0);
   const [step, setStep] = useState(0);
+  const [stage, setStage] = useState<LessonStage>("theory");
   const [quiz, setQuiz] = useState("");
   const [completed, setCompleted] = useState<Set<string>>(() => new Set());
 
@@ -70,6 +72,7 @@ export function LessonViewer() {
     setCourseIndex(nextCourseIndex);
     setLessonIndex(0);
     setStep(0);
+    setStage("theory");
     setQuiz("");
     setMode("lessons");
   }
@@ -78,6 +81,7 @@ export function LessonViewer() {
     if (!isLessonAvailable(nextLessonIndex)) return;
     setLessonIndex(nextLessonIndex);
     setStep(0);
+    setStage("theory");
     setQuiz("");
     setMode("player");
   }
@@ -100,6 +104,12 @@ export function LessonViewer() {
     const next = Math.min(lessonIndex + 1, lessons.length - 1);
     if (next !== lessonIndex) openLesson(next);
   }
+
+  const stageLabels: Record<LessonStage, string> = {
+    theory: "Theorie",
+    demo: "Demonstration",
+    exercise: "Exercice"
+  };
 
   if (mode === "courses") {
     const totalLessons = courses.reduce((sum, item) => sum + item.modules.flatMap((module) => module.lessons).length, 0);
@@ -240,8 +250,73 @@ export function LessonViewer() {
           <h1 className="truncate text-xl font-semibold lg:text-2xl">{pick(lesson.title)}</h1>
           <p className="hidden max-w-5xl truncate text-sm text-sage dark:text-mint sm:block">{pick(lesson.objective)}</p>
         </div>
+        <div className="grid grid-cols-3 gap-2 text-xs sm:max-w-md">
+          {(Object.keys(stageLabels) as LessonStage[]).map((item) => (
+            <button
+              key={item}
+              className={`rounded border px-2 py-1.5 font-semibold ${stage === item ? "border-ink bg-ink text-white dark:border-coral dark:bg-coral" : "border-black/10 dark:border-white/10"}`}
+              onClick={() => setStage(item)}
+            >
+              {stageLabels[item]}
+            </button>
+          ))}
+        </div>
       </header>
 
+      {stage === "theory" ? (
+        <section className="grid min-h-0 gap-3 overflow-hidden md:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]">
+          <article className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded border border-black/10 bg-white dark:border-white/10 dark:bg-white/5">
+            <div className="border-b border-black/10 p-3 dark:border-white/10">
+              <p className="text-xs font-semibold uppercase text-coral">Avant de toucher aux pieces</p>
+              <h2 className="text-xl font-semibold">La theorie de cette lecon</h2>
+            </div>
+            <div className="min-h-0 overflow-y-auto p-3">
+              <div className="grid gap-3 text-sm">
+                <section className="rounded bg-mint p-3 text-ink">
+                  <h3 className="font-semibold">Idee principale</h3>
+                  <p className="mt-2">{pick(content.summary)}</p>
+                </section>
+                <section className="rounded border border-black/10 p-3 dark:border-white/10">
+                  <h3 className="flex items-center gap-2 font-semibold"><Target size={17} /> Methode a retenir</h3>
+                  <p className="mt-2 text-sage dark:text-mint">{pick(content.method)}</p>
+                </section>
+                <section className="rounded border border-black/10 p-3 dark:border-white/10">
+                  <h3 className="flex items-center gap-2 font-semibold"><ListChecks size={17} /> Points de controle</h3>
+                  <ul className="mt-2 grid gap-1 text-sage dark:text-mint">
+                    {content.checklist.map((item) => <li key={pick(item)}>- {pick(item)}</li>)}
+                  </ul>
+                </section>
+                <section className="rounded border border-black/10 p-3 dark:border-white/10">
+                  <h3 className="font-semibold">Erreur typique</h3>
+                  <p className="mt-2 text-sage dark:text-mint">{pick(content.mistake)}</p>
+                </section>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 border-t border-black/10 p-3 dark:border-white/10">
+              <button className="rounded border px-3 py-2 text-sm" onClick={() => setMode("lessons")}>Retour</button>
+              <button className="flex items-center justify-center gap-2 rounded bg-ink px-3 py-2 text-sm text-white dark:bg-coral" onClick={() => setStage("demo")}>
+                Voir l&apos;exemple <ChevronRight size={17} />
+              </button>
+            </div>
+          </article>
+
+          <aside className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded border border-black/10 dark:border-white/10">
+            <div className="border-b border-black/10 p-3 dark:border-white/10">
+              <h2 className="flex items-center gap-2 font-semibold"><BookOpen size={17} /> Plan de travail</h2>
+            </div>
+            <div className="min-h-0 overflow-y-auto p-3 text-sm">
+              <ol className="grid gap-2">
+                <li className="rounded bg-ink p-3 text-white dark:bg-coral"><strong>1. Theorie</strong><br />Comprendre le principe avec des mots simples.</li>
+                <li className="rounded border border-black/10 p-3 dark:border-white/10"><strong>2. Demonstration</strong><br />Observer le coup cle sur l&apos;echiquier.</li>
+                <li className="rounded border border-black/10 p-3 dark:border-white/10"><strong>3. Exercice</strong><br />Repondre, demander un indice si besoin, puis valider.</li>
+              </ol>
+            </div>
+            <div className="border-t border-black/10 p-3 text-xs text-sage dark:border-white/10 dark:text-mint">
+              La lecon n&apos;est marquee terminee qu&apos;apres l&apos;exercice.
+            </div>
+          </aside>
+        </section>
+      ) : (
       <section className="grid min-h-0 gap-3 overflow-hidden md:grid-cols-[minmax(260px,1fr)_minmax(280px,360px)] xl:grid-cols-[minmax(420px,1fr)_390px]">
         <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-2 overflow-hidden">
           <div className="mx-auto grid min-h-0 w-full max-w-[min(48svh,440px)] place-items-center overflow-hidden sm:max-w-[min(54svh,520px)] lg:max-w-[min(62svh,600px)]">
@@ -297,10 +372,15 @@ export function LessonViewer() {
           <div className="grid gap-2 border-t border-black/10 p-2 dark:border-white/10">
             <div className="grid grid-cols-2 gap-2">
               <button className="flex min-h-10 items-center justify-center gap-2 rounded border px-3 py-2 text-sm" onClick={() => setQuiz(`Indice : joue ${content.exercise.solution[0]}`)}><Lightbulb size={17} /> Indice</button>
-              <button className="flex min-h-10 items-center justify-center gap-2 rounded bg-coral px-3 py-2 text-sm text-white" onClick={markComplete} disabled={completed.has(currentKey)}>
+              <button className="flex min-h-10 items-center justify-center gap-2 rounded bg-coral px-3 py-2 text-sm text-white" onClick={markComplete} disabled={completed.has(currentKey) || stage !== "exercise"}>
                 <Trophy size={17} /> {completed.has(currentKey) ? "Terminee" : "Valider"}
               </button>
             </div>
+            {stage === "demo" && (
+              <button className="flex min-h-10 items-center justify-center gap-2 rounded bg-ink px-3 py-2 text-sm text-white dark:bg-coral" onClick={() => setStage("exercise")}>
+                Passer a l&apos;exercice <ChevronRight size={17} />
+              </button>
+            )}
             {completed.has(currentKey) && lessonIndex < lessons.length - 1 && (
               <button className="flex min-h-10 items-center justify-center gap-2 rounded bg-ink px-3 py-2 text-sm text-white dark:bg-coral" onClick={nextLesson}>
                 Lecon suivante <ChevronRight size={17} />
@@ -313,6 +393,7 @@ export function LessonViewer() {
           </div>
         </aside>
       </section>
+      )}
     </main>
   );
 }
