@@ -1,15 +1,18 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { createSession, hashPassword } from "@/lib/auth";
+import { limited, parseBody } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
+  const blocked = limited(request, "register", 5, 60 * 60 * 1000);
+  if (blocked) return blocked;
   try {
-    const parsed = registerSchema.safeParse(await request.json());
-    if (!parsed.success) return NextResponse.json({ error: "Formulaire invalide." }, { status: 400 });
-    const { displayName, email, password, locale, chessLevel } = parsed.data;
+    const body = await parseBody(request, registerSchema, "Formulaire invalide (mot de passe : 10 caractères minimum, lettres et chiffres).");
+    if (body.error) return body.error;
+    const { displayName, email, password, locale, chessLevel } = body.data;
     const exists = await prisma.user.findUnique({ where: { email } });
-    if (exists) return NextResponse.json({ error: "Cet email existe deja." }, { status: 409 });
+    if (exists) return NextResponse.json({ error: "Inscription impossible avec ces informations." }, { status: 409 });
     const user = await prisma.user.create({
       data: {
         email,
@@ -20,7 +23,8 @@ export async function POST(request: Request) {
     });
     await createSession(user.id);
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "Inscription indisponible. Verifiez la base de donnees et reessayez." }, { status: 503 });
+  } catch (error) {
+    console.error("[register]", error);
+    return NextResponse.json({ error: "Inscription indisponible. Vérifiez la base de données et réessayez." }, { status: 503 });
   }
 }

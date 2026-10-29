@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { levels } from "@/data/content";
@@ -104,7 +104,7 @@ export function AuthPanel() {
           </>
         )}
         <label className="grid gap-1 text-sm">Email<input name="email" type="email" required defaultValue={mode === "login" ? "demo@chessmentor.local" : ""} className="rounded border p-3 text-ink" /></label>
-        <label className="grid gap-1 text-sm">Mot de passe<input name="password" type="password" required defaultValue={mode === "login" ? "ChessMentor123!" : ""} className="rounded border p-3 text-ink" /></label>
+        <label className="grid gap-1 text-sm">Mot de passe<input name="password" type="password" required autoComplete={mode === "login" ? "current-password" : "new-password"} minLength={mode === "login" ? undefined : 10} className="rounded border p-3 text-ink" /></label>
         <button className="rounded bg-ink px-4 py-3 font-medium text-white dark:bg-coral">{mode === "register" ? "Creer mon compte" : "Me connecter"}</button>
         <button type="button" className="rounded border border-black/10 px-4 py-3 text-sm dark:border-white/10" onClick={() => setMessage("OAuth Google est prepare via .env, a connecter dans le fournisseur de production.")}>Continuer avec Google</button>
         <button type="button" className="text-sm underline" onClick={() => setMessage("Un lien de recuperation serait envoye apres configuration SMTP.")}>Mot de passe oublie ?</button>
@@ -113,3 +113,4 @@ export function AuthPanel() {
     </section>
   );
 }
+

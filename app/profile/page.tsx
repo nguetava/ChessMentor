@@ -23,7 +23,7 @@ export default async function ProfilePage() {
         <h1 className="text-3xl font-semibold">Profil</h1>
         <section className="rounded border p-5 dark:border-white/10">
           <div className="flex items-center gap-4"><div className="grid h-16 w-16 place-items-center rounded bg-coral text-xl text-white">{initials}</div><div><h2 className="text-xl font-semibold">{displayName}</h2><p className="text-sage">Interface en francais | Niveau : {level}</p>{user?.email && <p className="text-sm text-sage">{user.email}</p>}</div></div>
-          <div className="mt-5 grid gap-3 sm:grid-cols-3"><span>XP : {stats?.xp ?? demoStats.xp}</span><span>Parties : {stats?.gamesPlayed ?? demoStats.games}</span><span>Temps total : {profile?.totalLearningMin ?? 0} min</span></div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-3"><span>XP : {user ? (stats?.xp ?? 0) : demoStats.xp}</span><span>Parties : {user ? (stats?.gamesPlayed ?? 0) : demoStats.games}</span><span>Temps total : {profile?.totalLearningMin ?? 0} min</span></div>
         </section>
         <section className="rounded border p-5 dark:border-white/10">
           <h2 className="text-xl font-semibold">Preferences</h2>

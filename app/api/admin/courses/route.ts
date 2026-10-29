@@ -1,11 +1,8 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { courses, exercises } from "@/data/content";
+import { requireAdmin } from "@/lib/auth";
 
 export async function GET() {
+  if (!(await requireAdmin())) return NextResponse.json({ error: "Accès refusé." }, { status: 403 });
   return NextResponse.json({ courses, exercises });
-}
-
-export async function POST(request: Request) {
-  const payload = await request.json();
-  return NextResponse.json({ ok: true, draft: payload });
 }

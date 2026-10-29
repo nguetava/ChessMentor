@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Chess } from "chess.js";
 import { ChessBoard } from "@/components/ChessBoard";
 import { chooseComputerMove, coachHints } from "@/lib/chess";
+import { StockfishEngine } from "@/lib/engine/uci";
 import { playMoveSound } from "@/lib/sound";
 import { ArrowLeft, Brain, CalendarPlus, Clock, Lightbulb, RotateCcw, ShieldCheck, Sparkles, StepBack, Trophy, Users } from "lucide-react";
 
@@ -40,6 +41,10 @@ export function PlayComputer() {
   const [hintStep, setHintStep] = useState(0);
   const [viewport, setViewport] = useState({ width: 1280, height: 720 });
   const replyTimer = useRef<number | null>(null);
+  const replyToken = useRef(0);
+  const engineRef = useRef<StockfishEngine | null>(null);
+
+  useEffect(() => () => engineRef.current?.terminate(), []);
 
   const chess = useMemo(() => buildGame(moves), [moves]);
   const history = chess.history();
@@ -70,6 +75,7 @@ export function PlayComputer() {
   function clearReplyTimer() {
     if (replyTimer.current) window.clearTimeout(replyTimer.current);
     replyTimer.current = null;
+    replyToken.current += 1;
   }
 
   function finishMessage(nextGame: Chess) {
@@ -101,16 +107,31 @@ export function PlayComputer() {
     clearReplyTimer();
     setThinking(true);
     setMessage(training ? "L'ordinateur reflechit. Les conseils seront disponibles apres sa reponse." : "L'ordinateur reflechit.");
-    replyTimer.current = window.setTimeout(() => {
+    const token = replyToken.current;
+    replyTimer.current = window.setTimeout(async () => {
       const next = buildGame(nextMoves);
-      const computer = chooseComputerMove(next.fen(), difficulty);
-      if (!computer) {
+      // Stockfish tourne dans un Web Worker ; repli sur l'IA locale si le moteur est indisponible.
+      let computerSan: string | null = null;
+      try {
+        const engine = (engineRef.current ??= new StockfishEngine());
+        const uci = await engine.bestMove(next.fen(), difficulty);
+        if (uci) {
+          const probe = new Chess(next.fen());
+          computerSan = probe.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] })?.san ?? null;
+        }
+      } catch {
+        engineRef.current?.terminate();
+        engineRef.current = null;
+      }
+      if (token !== replyToken.current) return;
+      if (!computerSan) computerSan = chooseComputerMove(next.fen(), difficulty)?.san ?? null;
+      if (!computerSan) {
         setThinking(false);
         finishMessage(next);
         return;
       }
 
-      const played = next.move(computer.san);
+      const played = next.move(computerSan);
       playMoveSound(played?.captured ? "capture" : "move");
       const updatedMoves = next.history();
       setMoves(updatedMoves);

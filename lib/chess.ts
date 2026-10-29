@@ -151,7 +151,8 @@ export function analyzePgn(pgn: string) {
     accuracy: Math.max(35, 92 - mistakes * 7 - blunders * 12),
     mistakes,
     blunders,
-    summary: "Analyse pedagogique : developpement, securite du roi, tactiques et rythme des pieces ont ete verifies.",
+    engine: false,
+    summary: "Analyse simplifiée sans moteur (heuristique sur les coups de dame et les échecs). Pour une vraie analyse, ouvrez la page Analyse.",
     keyMoments: [
       {
         move: history[0] ?? "position initiale",

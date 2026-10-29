@@ -1,19 +1,25 @@
-import { NextResponse } from "next/server";
-import { createSession, verifyPassword } from "@/lib/auth";
+﻿import { NextResponse } from "next/server";
+import { DUMMY_HASH, createSession, verifyPassword } from "@/lib/auth";
+import { limited, parseBody } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { loginSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
+  const blocked = limited(request, "login", 10, 15 * 60 * 1000);
+  if (blocked) return blocked;
   try {
-    const parsed = loginSchema.safeParse(await request.json());
-    if (!parsed.success) return NextResponse.json({ error: "Identifiants invalides." }, { status: 400 });
-    const user = await prisma.user.findUnique({ where: { email: parsed.data.email } });
-    if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
+    const body = await parseBody(request, loginSchema, "Identifiants invalides.");
+    if (body.error) return body.error;
+    const user = await prisma.user.findUnique({ where: { email: body.data.email } });
+    // Toujours exécuter bcrypt pour un temps de réponse constant (anti-énumération par timing).
+    const valid = await verifyPassword(body.data.password, user?.passwordHash ?? DUMMY_HASH);
+    if (!user || !valid) {
       return NextResponse.json({ error: "Email ou mot de passe incorrect." }, { status: 401 });
     }
     await createSession(user.id);
     return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ error: "Connexion indisponible. Verifiez la base de donnees et reessayez." }, { status: 503 });
+  } catch (error) {
+    console.error("[login]", error);
+    return NextResponse.json({ error: "Connexion indisponible. Vérifiez la base de données et réessayez." }, { status: 503 });
   }
 }

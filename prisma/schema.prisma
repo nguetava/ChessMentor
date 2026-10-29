@@ -125,6 +125,7 @@ model ExerciseAttempt {
   createdAt   DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   exercise    Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  @@index([userId, createdAt])
 }
 
 model Game {
@@ -140,6 +141,7 @@ model Game {
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   moves         GameMove[]
   analysis      GameAnalysis?
+  @@index([userId, startedAt])
 }
 
 model GameMove {
@@ -150,6 +152,7 @@ model GameMove {
   fen       String
   evalCp    Int?
   game      Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  @@index([gameId, ply])
 }
 
 model GameAnalysis {
@@ -205,6 +208,7 @@ model UserStatistics {
   losses             Int    @default(0)
   draws              Int    @default(0)
   successRate        Int    @default(0)
+  lastActiveOn       DateTime?
   user               User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 

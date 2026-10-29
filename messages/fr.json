@@ -1,4 +1,4 @@
 {
-  "nav": { "home": "Accueil", "dashboard": "Tableau de bord", "learn": "Cours", "practice": "Exercices", "play": "Jouer", "profile": "Profil", "admin": "Admin" },
+  "nav": { "home": "Accueil", "dashboard": "Tableau de bord", "learn": "Cours", "practice": "Exercices", "play": "Jouer", "history": "Parties", "profile": "Profil", "admin": "Admin" },
   "home": { "title": "Apprenez les echecs, un coup a la fois", "start": "Commencer gratuitement", "courses": "Decouvrir les cours" }
 }

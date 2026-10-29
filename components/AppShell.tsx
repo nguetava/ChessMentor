@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, Brain, ChartNoAxesColumnIncreasing, Home, LogOut, Moon, Shield, Sun, User, Zap } from "lucide-react";
+import { BookOpen, Brain, ChartNoAxesColumnIncreasing, History, Home, LogOut, Moon, Shield, Sun, User, Zap } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { dictionaries } from "@/lib/i18n";
 
@@ -12,6 +12,7 @@ const navItems = [
   ["/learn", "learn", BookOpen],
   ["/practice", "practice", Brain],
   ["/play", "play", Zap],
+  ["/history", "history", History],
   ["/profile", "profile", User],
   ["/admin", "admin", Shield]
 ] as const;

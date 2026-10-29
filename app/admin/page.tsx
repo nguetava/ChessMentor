@@ -1,7 +1,13 @@
 import { AppShell } from "@/components/AppShell";
+import { notFound } from "next/navigation";
 import { courses, exercises } from "@/data/content";
+import { requireAdmin } from "@/lib/auth";
 
-export default function AdminPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminPage() {
+  if (!(await requireAdmin())) notFound();
+
   return (
     <AppShell>
       <main className="mx-auto grid max-w-6xl gap-6 px-4 py-8">
@@ -20,3 +26,4 @@ export default function AdminPage() {
     </AppShell>
   );
 }
+

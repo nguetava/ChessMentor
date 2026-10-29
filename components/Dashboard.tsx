@@ -2,15 +2,14 @@
 
 import Link from "next/link";
 import { Award, Flame, PlayCircle, Target, Trophy } from "lucide-react";
-import { demoStats } from "@/lib/demo";
+import type { DashboardStats } from "@/lib/dashboard";
 
-export function Dashboard() {
-  const stats = demoStats;
+export function Dashboard({ stats, demo = false }: { stats: DashboardStats; demo?: boolean }) {
   const cards = [
     ["XP", stats.xp, Trophy],
     ["Serie quotidienne", `${stats.streak} jours`, Flame],
     ["Lecons terminees", stats.lessons, PlayCircle],
-    ["Reussite", `${stats.successRate}%`, Target]
+    ["Victoires", stats.games ? `${stats.winRate}% (${stats.games} parties)` : "Aucune partie", Target]
   ] as const;
 
   return (
@@ -24,6 +23,7 @@ export function Dashboard() {
         </Link>
       </aside>
       <section className="grid gap-6">
+        {demo && <p role="status" className="rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">Données d'exemple : connectez-vous pour suivre votre vraie progression.</p>}
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {cards.map(([label, value, Icon]) => (
             <article key={label} className="rounded border border-black/10 bg-white p-4 dark:border-white/10 dark:bg-white/5">
@@ -37,9 +37,21 @@ export function Dashboard() {
           <section className="rounded border border-black/10 p-5 dark:border-white/10">
             <h2 className="text-xl font-semibold">Recommandations</h2>
             <ul className="mt-3 grid gap-2 text-sm">
-              <li>Revoir : Comment reconnaitre un echec et mat ?</li>
-              <li>Exercice a reprendre : fourchette</li>
-              <li>Objectif du jour : 40 XP</li>
+              {demo ? (
+                <>
+                  <li>Revoir : Comment reconnaitre un echec et mat ?</li>
+                  <li>Exercice a reprendre : fourchette</li>
+                  <li>Objectif du jour : 40 XP</li>
+                </>
+              ) : (
+                <>
+                  {stats.weaknesses.slice(0, 2).map((weakness) => (
+                    <li key={weakness.theme}>Revoir : {weakness.lesson} ({weakness.theme})</li>
+                  ))}
+                  {stats.weaknesses.length === 0 && <li>Terminez une leçon ou un exercice pour recevoir des recommandations personnalisées.</li>}
+                  <li>Objectif du jour : 40 XP</li>
+                </>
+              )}
             </ul>
           </section>
           <section className="rounded border border-black/10 p-5 dark:border-white/10">
